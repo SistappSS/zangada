@@ -993,18 +993,15 @@ const VideoUrlField=({value,onChange})=>{
    TEMPLATE PREVIEW — iframe para templates externos,
    Phone interno para o clássico
 ════════════════════════════════════════════════════ */
-const TemplatePreview=({config,theme,accent,particles})=>{
-  const tpl = TEMPLATES[config.templateId] || TEMPLATES.classic;
-
-  if(!tpl.external){
-    // Template clássico: usa o Phone existente
-    return <Phone config={config} theme={theme} accent={accent} particles={particles}/>;
-  }
-
-  // Template externo: iframe com postMessage para passar a config
+const ExternalTemplatePreview=({tpl,config})=>{
   const iframeRef = useRef(null);
   const [loaded, setLoaded] = useState(false);
   const [error, setError]   = useState(false);
+
+  useEffect(()=>{
+    setLoaded(false);
+    setError(false);
+  },[tpl.file]);
 
   // Envia config ao iframe sempre que mudar
   useEffect(()=>{
@@ -1035,6 +1032,7 @@ const TemplatePreview=({config,theme,accent,particles})=>{
         </div>
       )}
       <iframe
+        key={tpl.file}
         ref={iframeRef}
         src={tpl.file}
         onLoad={()=>setLoaded(true)}
@@ -1050,6 +1048,17 @@ const TemplatePreview=({config,theme,accent,particles})=>{
       />
     </div>
   );
+};
+
+const TemplatePreview=({config,theme,accent,particles})=>{
+  const tpl = TEMPLATES[config.templateId] || TEMPLATES.classic;
+
+  if(!tpl.external){
+    // Template clássico: usa o Phone existente
+    return <Phone config={config} theme={theme} accent={accent} particles={particles}/>;
+  }
+
+  return <ExternalTemplatePreview tpl={tpl} config={config}/>;
 };
 
 /* ── APP (BUILDER) ── */
