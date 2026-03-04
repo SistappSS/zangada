@@ -1,0 +1,837 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Love Streaming</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;0,900;1,400;1,700&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600&family=Bebas+Neue&display=swap" rel="stylesheet">
+<style>
+/* ═══════════════════════════════════════════════
+   TOKENS
+═══════════════════════════════════════════════ */
+:root {
+  --bg:       #06060a;
+  --s1:       #0d0d14;
+  --s2:       #14141e;
+  --border:   rgba(255,255,255,0.07);
+  --acc:      #e63946;
+  --acc2:     #ff6b6b;
+  --acc-glow: rgba(230,57,70,0.35);
+  --text:     #f0eee8;
+  --muted:    #6a6878;
+  --r:        18px;
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; }
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'DM Sans', sans-serif;
+  overflow-x: hidden;
+}
+
+/* grain overlay */
+body::after {
+  content: '';
+  position: fixed; inset: 0; pointer-events: none; z-index: 9999;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.035'/%3E%3C/svg%3E");
+  opacity: .6;
+}
+
+/* ── SECTION HELPERS ── */
+.sec-tag {
+  display: inline-flex; align-items: center; gap: 10px;
+  font-size: 10px; font-weight: 700;
+  letter-spacing: .2em; text-transform: uppercase;
+  color: var(--muted); margin-bottom: 12px;
+}
+.sec-tag::before { content: ''; width: 28px; height: 1px; background: var(--acc); flex-shrink: 0; }
+.sec-tag.acc { color: var(--acc); }
+
+.reveal { opacity: 0; transform: translateY(32px); transition: opacity .7s ease, transform .7s ease; }
+.reveal.visible { opacity: 1; transform: none; }
+
+/* ═══════════════════════════════════════════════
+   ① ENVELOPE GATE (shown before card if envelope.on)
+═══════════════════════════════════════════════ */
+#envelope-gate {
+  display: none;
+  position: fixed; inset: 0; z-index: 8000;
+  background: var(--bg);
+  align-items: center; justify-content: center;
+  flex-direction: column; gap: 24px; text-align: center; padding: 32px;
+}
+#envelope-gate.active { display: flex; }
+
+.env-icon { font-size: 72px; animation: pulse-env 2s ease-in-out infinite; }
+@keyframes pulse-env {
+  0%,100% { transform: scale(1); filter: drop-shadow(0 0 20px var(--acc-glow)); }
+  50%      { transform: scale(1.08); filter: drop-shadow(0 0 36px var(--acc-glow)); }
+}
+.env-title {
+  font-family: 'Playfair Display', serif;
+  font-size: clamp(22px, 5vw, 34px); font-weight: 700;
+  line-height: 1.2;
+}
+.env-sub { font-size: 14px; color: var(--muted); max-width: 320px; line-height: 1.6; }
+.env-btn {
+  display: inline-flex; align-items: center; gap: 10px;
+  padding: 14px 36px; border-radius: 100px;
+  background: var(--acc); border: none;
+  color: #fff; font-family: 'DM Sans', sans-serif;
+  font-size: 14px; font-weight: 700; cursor: pointer;
+  letter-spacing: .04em; box-shadow: 0 6px 30px var(--acc-glow);
+  transition: transform .25s, box-shadow .25s;
+}
+.env-btn:hover { transform: translateY(-3px); box-shadow: 0 12px 44px var(--acc-glow); }
+
+/* ═══════════════════════════════════════════════
+   EMOJI RAIN
+═══════════════════════════════════════════════ */
+#rain-canvas {
+  position: fixed; inset: 0; pointer-events: none; z-index: 100; overflow: hidden;
+}
+.rain-drop {
+  position: absolute; top: -60px; pointer-events: none;
+  animation: rain-fall linear forwards;
+  will-change: transform;
+}
+@keyframes rain-fall {
+  0%   { transform: translateY(0) rotate(0deg); opacity: 1; }
+  100% { transform: translateY(110vh) rotate(720deg); opacity: 0; }
+}
+
+/* ═══════════════════════════════════════════════
+   ① HERO
+═══════════════════════════════════════════════ */
+#hero {
+  position: relative; min-height: 100svh;
+  display: flex; align-items: center; justify-content: center;
+  text-align: center; overflow: hidden;
+}
+#hero-video {
+  position: absolute; inset: 0; width: 100%; height: 100%;
+  object-fit: cover; opacity: .45; transform: scale(1.06);
+  filter: saturate(.65); pointer-events: none;
+}
+#hero-photo {
+  position: absolute; inset: 0; width: 100%; height: 100%;
+  object-fit: cover; opacity: .5; filter: saturate(.7);
+  pointer-events: none; display: none;
+}
+.hero-overlay {
+  position: absolute; inset: 0;
+  background: linear-gradient(to top, #06060a 0%, rgba(6,6,10,.12) 55%, rgba(6,6,10,.55) 100%);
+}
+.hero-content {
+  position: relative; z-index: 5;
+  padding: 48px 24px;
+  display: flex; flex-direction: column; align-items: center; gap: 18px;
+}
+.hero-badge {
+  display: inline-flex; align-items: center; gap: 8px;
+  border: 1px solid rgba(255,255,255,.14); padding: 6px 18px; border-radius: 100px;
+  backdrop-filter: blur(12px); background: rgba(255,255,255,.03);
+  font-size: 10px; font-weight: 700; letter-spacing: .14em; text-transform: uppercase;
+  color: rgba(255,255,255,.65);
+}
+.hero-badge-dot {
+  width: 7px; height: 7px; border-radius: 50%;
+  background: var(--acc); box-shadow: 0 0 10px var(--acc);
+  animation: blink 2s infinite;
+}
+@keyframes blink {
+  0%,100% { opacity:1; transform:scale(1); }
+  50%      { opacity:.4; transform:scale(.75); }
+}
+.hero-sub {
+  font-family: 'Playfair Display', serif; font-style: italic;
+  font-size: 15px; color: rgba(255,255,255,.45); letter-spacing: .04em;
+}
+.hero-name {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: clamp(72px, 18vw, 148px); letter-spacing: .02em; line-height: .9;
+  background: linear-gradient(140deg, #fff 0%, rgba(255,255,255,.6) 100%);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+  filter: drop-shadow(0 0 60px rgba(255,255,255,.12));
+}
+.hero-tags { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; }
+.hero-tag {
+  font-size: 10px; font-weight: 600; letter-spacing: .1em; text-transform: uppercase;
+  padding: 5px 14px; border-radius: 100px;
+  border: 1px solid rgba(255,255,255,.1); color: rgba(255,255,255,.55);
+}
+.hero-cta {
+  display: inline-flex; align-items: center; gap: 10px;
+  padding: 14px 32px; border-radius: 100px;
+  background: var(--acc); border: none; color: #fff;
+  font-family: 'DM Sans', sans-serif; font-size: 14px; font-weight: 700;
+  cursor: pointer; letter-spacing: .04em; box-shadow: 0 6px 30px var(--acc-glow);
+  transition: transform .25s, box-shadow .25s;
+}
+.hero-cta:hover { transform: translateY(-3px); box-shadow: 0 12px 44px var(--acc-glow); }
+.hero-scroll {
+  position: absolute; bottom: 28px; left: 50%; transform: translateX(-50%);
+  display: flex; flex-direction: column; align-items: center; gap: 6px;
+  color: rgba(255,255,255,.25); font-size: 9px;
+  letter-spacing: .18em; text-transform: uppercase; font-weight: 600;
+  animation: float 2.8s ease-in-out infinite;
+}
+@keyframes float {
+  0%,100% { transform: translateX(-50%) translateY(0); }
+  50%      { transform: translateX(-50%) translateY(-7px); }
+}
+
+/* ═══════════════════════════════════════════════
+   ② MOMENTOS CARROSSEL
+═══════════════════════════════════════════════ */
+#momentos { padding: 72px 0 20px; display: none; }
+#momentos .inner { padding: 0 40px; margin-bottom: 28px; }
+.carousel-wrap { overflow: hidden; }
+.carousel-track {
+  display: flex; gap: 16px; padding: 8px 40px 24px;
+  animation: slide 28s linear infinite; width: max-content;
+}
+.carousel-track:hover { animation-play-state: paused; }
+@keyframes slide { from { transform: translateX(0); } to { transform: translateX(-50%); } }
+.carousel-card {
+  width: 280px; aspect-ratio: 4/3; border-radius: var(--r); overflow: hidden;
+  border: 1px solid var(--border); flex-shrink: 0; background: var(--s2);
+  transition: transform .4s, box-shadow .4s; position: relative;
+}
+.carousel-card:hover { transform: scale(1.04); box-shadow: 0 20px 50px rgba(0,0,0,.7); }
+.carousel-card img { width:100%; height:100%; object-fit:cover; filter:saturate(.8); }
+
+/* ═══════════════════════════════════════════════
+   ③ DECLARAÇÃO
+═══════════════════════════════════════════════ */
+#declaracao { padding: 72px 40px; max-width: 780px; margin: 0 auto; display: none; }
+.quote-mark {
+  font-family: 'Playfair Display', serif; font-size: 96px; line-height: .6;
+  color: var(--acc); opacity: .25; display: block; margin-bottom: 8px; user-select: none;
+}
+.quote-body {
+  font-family: 'Playfair Display', serif; font-size: clamp(20px, 3vw, 30px);
+  font-style: italic; line-height: 1.65; color: rgba(255,255,255,.88);
+  border-left: 2px solid var(--acc); padding-left: 28px;
+}
+.quote-sig { margin-top: 20px; padding-left: 28px; font-size: 13px; color: var(--muted); font-style: italic; }
+
+/* ═══════════════════════════════════════════════
+   ④ MÚSICA
+═══════════════════════════════════════════════ */
+#musica { padding: 60px 40px 80px; display: none; flex-direction: column; align-items: center; text-align: center; }
+.music-card {
+  position: relative; overflow: hidden; width: 100%; max-width: 320px;
+  border-radius: 28px; background: var(--s1); border: 1px solid var(--border);
+  display: flex; flex-direction: column; align-items: center; padding-bottom: 32px;
+  box-shadow: 0 32px 80px rgba(0,0,0,.6); transition: transform .35s, box-shadow .35s;
+}
+.music-card:hover { transform: translateY(-6px); box-shadow: 0 44px 90px rgba(0,0,0,.7); }
+.music-card-bg {
+  position: absolute; inset: 0; background-size: cover; background-position: center;
+  opacity: .18; filter: blur(24px) saturate(.6); transform: scale(1.15); pointer-events: none;
+}
+.music-cover-wrap {
+  position: relative; z-index: 2; margin: 28px auto 0;
+  width: 200px; height: 200px; border-radius: 20px; overflow: hidden;
+  box-shadow: 0 20px 52px rgba(0,0,0,.7);
+}
+.music-cover-wrap img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.music-cover-wrap::after {
+  content: ''; position: absolute; inset: 0; border-radius: 20px;
+  background: radial-gradient(circle at 50% 50%, transparent 30%, rgba(0,0,0,.18) 31%, transparent 32%, transparent 100%);
+  opacity: 0; transition: opacity .3s;
+}
+.music-card:hover .music-cover-wrap::after { opacity: 1; }
+.music-card-body { position: relative; z-index: 2; width: 100%; padding: 22px 28px 0; }
+.music-track { font-size: 22px; font-weight: 700; letter-spacing: -.02em; line-height: 1.2; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.music-artist { font-size: 13px; color: var(--muted); margin-top: 4px; margin-bottom: 22px; font-weight: 400; }
+.music-controls { display: flex; align-items: center; justify-content: center; gap: 20px; margin-bottom: 20px; }
+.mc-btn { background: none; border: none; cursor: pointer; color: var(--muted); transition: color .2s, transform .2s; display: flex; align-items: center; justify-content: center; padding: 0; }
+.mc-btn:hover { color: var(--text); transform: scale(1.15); }
+.mc-btn.play { width: 54px; height: 54px; border-radius: 50%; background: var(--acc); color: #fff; box-shadow: 0 6px 24px var(--acc-glow); transition: transform .2s, box-shadow .2s; }
+.mc-btn.play:hover { transform: scale(1.1); box-shadow: 0 10px 36px var(--acc-glow); }
+.music-bar { height: 3px; background: rgba(255,255,255,.1); border-radius: 2px; position: relative; margin-bottom: 7px; cursor: pointer; }
+.music-fill { height: 100%; width: 0%; border-radius: 2px; background: var(--acc); position: relative; transition: width .1s; }
+.music-fill::after { content: ''; position: absolute; right: -5px; top: 50%; transform: translateY(-50%); width: 12px; height: 12px; border-radius: 50%; background: #fff; box-shadow: 0 0 8px rgba(0,0,0,.5); opacity: 0; transition: opacity .2s; }
+.music-bar:hover .music-fill::after { opacity: 1; }
+.music-times { display: flex; justify-content: space-between; font-size: 9px; color: var(--muted); font-weight: 700; }
+
+/* ═══════════════════════════════════════════════
+   ⑤ TIMELINE
+═══════════════════════════════════════════════ */
+#timeline { padding: 80px 0; display: none; }
+#timeline .inner { padding: 0 40px; margin-bottom: 48px; }
+.tl-wrap { position: relative; padding: 0 40px; }
+.tl-wrap::before {
+  content: ''; position: absolute; left: 50%; top: 0; bottom: 0; width: 1px;
+  background: linear-gradient(to bottom, transparent 0%, var(--border) 8%, var(--border) 92%, transparent 100%);
+  transform: translateX(-50%);
+}
+@media (max-width: 700px) { .tl-wrap::before { left: 28px; } }
+.tl-item {
+  display: grid; grid-template-columns: 1fr 56px 1fr;
+  align-items: start; margin-bottom: 64px; position: relative;
+}
+.tl-item:nth-child(odd) .tl-img-side  { order: 1; padding-right: 32px; }
+.tl-item:nth-child(odd) .tl-dot-col   { order: 2; }
+.tl-item:nth-child(odd) .tl-text-side { order: 3; padding-left: 32px; }
+.tl-item:nth-child(even) .tl-text-side { order: 1; padding-right: 32px; text-align: right; }
+.tl-item:nth-child(even) .tl-dot-col   { order: 2; }
+.tl-item:nth-child(even) .tl-img-side  { order: 3; padding-left: 32px; }
+@media (max-width: 700px) {
+  .tl-item { grid-template-columns: 56px 1fr; grid-template-rows: auto auto; }
+  .tl-item:nth-child(odd) .tl-img-side,
+  .tl-item:nth-child(even) .tl-img-side  { order: 2; grid-column: 2; padding: 0 0 16px 0; }
+  .tl-item:nth-child(odd) .tl-dot-col,
+  .tl-item:nth-child(even) .tl-dot-col   { order: 1; grid-column: 1; grid-row: 1 / 3; }
+  .tl-item:nth-child(odd) .tl-text-side,
+  .tl-item:nth-child(even) .tl-text-side { order: 3; grid-column: 2; padding: 0; text-align: left; }
+}
+.tl-dot-col { display: flex; flex-direction: column; align-items: center; padding-top: 6px; }
+.tl-dot {
+  width: 16px; height: 16px; border-radius: 50%; background: var(--bg);
+  border: 2px solid var(--acc);
+  box-shadow: 0 0 0 5px rgba(230,57,70,.15), 0 0 20px var(--acc-glow);
+  flex-shrink: 0; z-index: 2; position: relative; transition: transform .3s;
+}
+.tl-item:hover .tl-dot { transform: scale(1.35); box-shadow: 0 0 0 8px rgba(230,57,70,.12), 0 0 28px var(--acc-glow); }
+.tl-img { width: 100%; aspect-ratio: 4/3; border-radius: 16px; overflow: hidden; border: 1px solid var(--border); background: var(--s2); transition: transform .45s, box-shadow .45s; }
+.tl-img:hover { transform: scale(1.025); box-shadow: 0 24px 56px rgba(0,0,0,.65); }
+.tl-img img { width:100%; height:100%; object-fit:cover; filter:saturate(.8); }
+.tl-date { font-size: 10px; font-weight: 700; letter-spacing: .16em; text-transform: uppercase; color: var(--acc); margin-bottom: 8px; }
+.tl-title { font-family: 'Playfair Display', serif; font-size: clamp(18px, 2.4vw, 24px); font-weight: 700; line-height: 1.25; margin-bottom: 10px; }
+.tl-desc { font-size: 14px; line-height: 1.7; color: rgba(255,255,255,.55); font-weight: 300; }
+
+/* ═══════════════════════════════════════════════
+   ⑥ QUIZ
+═══════════════════════════════════════════════ */
+#quiz { padding: 80px 40px; display: none; }
+.quiz-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 20px; margin-top: 36px; }
+.quiz-card { background: var(--s1); border: 1px solid var(--border); border-radius: 22px; overflow: hidden; transition: border-color .3s, box-shadow .3s; }
+.quiz-card:hover { border-color: rgba(230,57,70,.3); box-shadow: 0 8px 40px rgba(0,0,0,.5); }
+.quiz-card-head { padding: 24px 24px 16px; border-bottom: 1px solid var(--border); display: flex; align-items: flex-start; gap: 14px; }
+.quiz-num { font-family: 'Bebas Neue', sans-serif; font-size: 42px; line-height: 1; color: var(--acc); opacity: .35; flex-shrink: 0; transition: opacity .3s; }
+.quiz-card:hover .quiz-num { opacity: .7; }
+.quiz-question { font-family: 'Playfair Display', serif; font-size: 16px; font-style: italic; line-height: 1.45; font-weight: 600; padding-top: 6px; }
+.quiz-options { padding: 16px 24px 24px; display: flex; flex-direction: column; gap: 10px; }
+.quiz-opt { display: flex; align-items: center; gap: 12px; padding: 12px 16px; border-radius: 12px; border: 1px solid var(--border); background: transparent; color: var(--text); font-family: 'DM Sans', sans-serif; font-size: 13px; font-weight: 400; cursor: pointer; text-align: left; transition: all .22s; width: 100%; }
+.quiz-opt:hover { border-color: rgba(230,57,70,.4); background: rgba(230,57,70,.07); color: #fff; }
+.quiz-opt.correct { border-color: #52b788; background: rgba(82,183,136,.12); color: #95d5b2; pointer-events: none; }
+.quiz-opt.wrong   { border-color: var(--acc); background: rgba(230,57,70,.1); color: var(--acc2); pointer-events: none; }
+.quiz-opt.disabled { opacity: .4; pointer-events: none; }
+.quiz-opt-letter { width: 26px; height: 26px; border-radius: 8px; border: 1px solid var(--border); display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; letter-spacing: .05em; flex-shrink: 0; transition: all .22s; }
+.quiz-opt:hover .quiz-opt-letter { border-color: var(--acc); color: var(--acc); }
+.quiz-opt.correct .quiz-opt-letter { border-color: #52b788; background: rgba(82,183,136,.2); color: #95d5b2; }
+.quiz-opt.wrong   .quiz-opt-letter { border-color: var(--acc); background: rgba(230,57,70,.2); color: var(--acc2); }
+.quiz-feedback { padding: 0 24px 20px; font-size: 13px; line-height: 1.55; display: none; color: rgba(255,255,255,.6); }
+.quiz-feedback.show { display: block; }
+.quiz-feedback.ok   { color: #95d5b2; }
+.quiz-feedback.fail { color: var(--acc2); }
+.quiz-score { margin-top: 28px; text-align: center; padding: 28px 24px; background: var(--s1); border: 1px solid var(--border); border-radius: 22px; display: none; }
+.quiz-score.show { display: block; }
+.quiz-score-num { font-family: 'Bebas Neue', sans-serif; font-size: 80px; line-height: 1; color: var(--acc); }
+.quiz-score-label { font-size: 14px; color: var(--muted); margin-top: 6px; }
+.quiz-score-msg { font-family: 'Playfair Display', serif; font-style: italic; font-size: 18px; color: rgba(255,255,255,.8); margin-top: 12px; }
+.quiz-retry { margin-top: 20px; padding: 12px 28px; border-radius: 100px; border: 1px solid var(--border); background: transparent; color: var(--text); font-family: 'DM Sans', sans-serif; font-size: 13px; font-weight: 600; cursor: pointer; letter-spacing: .04em; transition: all .2s; }
+.quiz-retry:hover { background: var(--acc); border-color: var(--acc); }
+
+/* ═══════════════════════════════════════════════
+   ⑦ CONTADOR
+═══════════════════════════════════════════════ */
+#contador { padding: 60px 40px; display: none; }
+.counter-box {
+  background: rgba(255,255,255,.025); border: 1px solid var(--border); border-radius: 24px;
+  padding: 40px 32px; display: flex; flex-wrap: wrap;
+  align-items: center; justify-content: center; gap: 0; max-width: 600px;
+}
+.ctr-unit { text-align: center; padding: 12px 24px; }
+.ctr-num {
+  font-family: 'Bebas Neue', sans-serif; font-size: clamp(52px, 9vw, 88px);
+  line-height: 1; letter-spacing: .02em;
+  background: linear-gradient(135deg, #fff 30%, rgba(255,255,255,.5));
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+}
+.ctr-label { font-size: 9px; font-weight: 700; letter-spacing: .2em; text-transform: uppercase; color: var(--acc); margin-top: 2px; }
+.ctr-sep { font-family: 'Bebas Neue', sans-serif; font-size: 56px; color: rgba(255,255,255,.12); padding-bottom: 18px; line-height: 1; }
+
+/* ── FOOTER ── */
+footer { padding: 32px 40px 48px; text-align: center; font-size: 10px; letter-spacing: .16em; text-transform: uppercase; color: rgba(255,255,255,.12); font-weight: 600; }
+
+/* ── SECRET MESSAGE (raspadinha) ── */
+#scratch-section { padding: 60px 40px; display: none; }
+.scratch-wrap {
+  max-width: 420px; border-radius: 20px; overflow: hidden;
+  border: 1px solid var(--border); background: var(--s1);
+  position: relative; cursor: pointer;
+}
+.scratch-cover {
+  width: 100%; padding: 48px 24px; text-align: center;
+  background: linear-gradient(135deg, var(--s2), var(--s1));
+  display: flex; flex-direction: column; align-items: center; gap: 12px;
+  transition: opacity .4s;
+}
+.scratch-cover-icon { font-size: 40px; }
+.scratch-cover-hint { font-size: 12px; color: var(--muted); letter-spacing: .08em; }
+.scratch-reveal {
+  position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
+  padding: 32px; text-align: center; opacity: 0; transition: opacity .4s;
+  pointer-events: none;
+}
+.scratch-reveal.show { opacity: 1; pointer-events: auto; }
+.scratch-cover.hide { opacity: 0; pointer-events: none; }
+.scratch-text { font-family: 'Playfair Display', serif; font-size: clamp(16px,2.5vw,22px); font-style: italic; line-height: 1.65; color: rgba(255,255,255,.9); }
+</style>
+</head>
+<body>
+
+<!-- ① ENVELOPE GATE -->
+<div id="envelope-gate">
+  <div class="env-icon" id="env-icon">💌</div>
+  <h2 class="env-title" id="env-title">Você recebeu um presente</h2>
+  <p class="env-sub" id="env-sub">Toque para abrir ✦</p>
+  <button class="env-btn" id="env-btn" onclick="openEnvelope()">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M20 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4l-8 5-8-5V6l8 5 8-5v2z"/></svg>
+    Abrir
+  </button>
+</div>
+
+<!-- EMOJI RAIN -->
+<div id="rain-canvas"></div>
+
+<!-- ① HERO -->
+<section id="hero">
+  <video id="hero-video" autoplay loop muted playsinline style="display:none">
+    <source id="hero-video-src" src="" type="video/mp4">
+  </video>
+  <img id="hero-photo" src="" alt="capa"/>
+  <div class="hero-overlay"></div>
+  <div class="hero-content">
+    <div class="hero-badge">
+      <span class="hero-badge-dot"></span>
+      <span id="badge-text">❤️ LoveBuilder</span>
+    </div>
+    <p class="hero-sub" id="hero-sub">Uma história de amor</p>
+    <h1 class="hero-name" id="hero-name">Love</h1>
+    <div class="hero-tags" id="hero-tags">
+      <span class="hero-tag" id="tag-compat">100% Compatíveis</span>
+      <span class="hero-tag" id="tag-year"></span>
+      <span class="hero-tag">Para Sempre</span>
+    </div>
+    <button class="hero-cta" id="hero-cta" style="display:none">
+      <svg width="17" height="17" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
+      Assistir Nossa História
+    </button>
+  </div>
+  <div class="hero-scroll">
+    <svg width="16" height="20" viewBox="0 0 16 20" fill="none" stroke="currentColor" stroke-width="1.5">
+      <rect x="1" y="1" width="14" height="18" rx="7"/>
+      <line x1="8" y1="5" x2="8" y2="9"/>
+    </svg>
+    Rolar
+  </div>
+</section>
+
+<!-- ② MOMENTOS -->
+<section id="momentos">
+  <div class="inner reveal">
+    <span class="sec-tag acc">📸 Nossos momentos</span>
+  </div>
+  <div class="carousel-wrap">
+    <div class="carousel-track" id="carouselTrack"></div>
+  </div>
+</section>
+
+<!-- ③ DECLARAÇÃO -->
+<section id="declaracao" class="reveal">
+  <span class="sec-tag acc">💬 A Sinopse</span>
+  <span class="quote-mark">"</span>
+  <p class="quote-body" id="quoteBody"></p>
+  <p class="quote-sig" id="quoteSig"></p>
+</section>
+
+<!-- ④ MÚSICA -->
+<section id="musica" class="reveal">
+  <span class="sec-tag acc">🎵 Nossa música</span>
+  <div class="music-card">
+    <div class="music-card-bg" id="musicCardBg"></div>
+    <div class="music-cover-wrap">
+      <img id="musicCover" src="" alt="capa">
+    </div>
+    <div class="music-card-body">
+      <div class="music-track" id="musicTrack">Nossa Música</div>
+      <div class="music-artist" id="musicArtist">♪</div>
+      <div class="music-controls">
+        <button class="mc-btn" title="Anterior">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M6 6h2v12H6zm3.5 6 8.5 6V6z"/></svg>
+        </button>
+        <button class="mc-btn play" id="playBtn" onclick="togglePlay()" title="Play">
+          <svg id="playIcon" width="22" height="22" viewBox="0 0 24 24" fill="white"><path d="M8 5v14l11-7z"/></svg>
+        </button>
+        <button class="mc-btn" title="Próxima">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M6 18l8.5-6L6 6v12zm2-6 5.5-3.9L8 8.1V12zm8-6v12h2V6h-2z"/></svg>
+        </button>
+      </div>
+      <div class="music-bar"><div class="music-fill" id="musicFill"></div></div>
+      <div class="music-times"><span id="musicCurrent">0:00</span><span id="musicTotal">0:00</span></div>
+    </div>
+  </div>
+</section>
+
+<!-- ⑤ TIMELINE (fotos como capítulos) -->
+<section id="timeline">
+  <div class="inner reveal">
+    <span class="sec-tag acc">📅 Nossa linha do tempo</span>
+    <h2 style="font-family:'Playfair Display',serif;font-size:clamp(26px,4vw,38px);font-weight:700;margin-top:8px;line-height:1.2">Os capítulos da nossa história</h2>
+  </div>
+  <div class="tl-wrap" id="timelineWrap"></div>
+</section>
+
+<!-- ⑥ MENSAGEM SECRETA (raspadinha) -->
+<section id="scratch-section" class="reveal">
+  <span class="sec-tag acc">🔐 Mensagem secreta</span>
+  <div class="scratch-wrap" id="scratchWrap" onclick="revealScratch()">
+    <div class="scratch-cover" id="scratchCover">
+      <div class="scratch-cover-icon">🎁</div>
+      <div style="font-size:15px;font-weight:700;margin-top:4px">Toque para revelar</div>
+      <div class="scratch-cover-hint">mensagem especial escondida aqui</div>
+    </div>
+    <div class="scratch-reveal" id="scratchReveal">
+      <p class="scratch-text" id="scratchText"></p>
+    </div>
+  </div>
+</section>
+
+<!-- ⑦ CONTADOR -->
+<section id="contador" class="reveal">
+  <span class="sec-tag acc">⏳ Nosso tempo</span>
+  <p style="font-size:13px;color:var(--muted);margin-bottom:28px;font-weight:300">Contando cada segundo de felicidade ao seu lado.</p>
+  <div class="counter-box">
+    <div class="ctr-unit"><div class="ctr-num" id="cDias">000</div><div class="ctr-label">Dias</div></div>
+    <div class="ctr-sep">:</div>
+    <div class="ctr-unit"><div class="ctr-num" id="cHoras">00</div><div class="ctr-label">Horas</div></div>
+    <div class="ctr-sep">:</div>
+    <div class="ctr-unit"><div class="ctr-num" id="cMins">00</div><div class="ctr-label">Mins</div></div>
+    <div class="ctr-sep">:</div>
+    <div class="ctr-unit"><div class="ctr-num" id="cSecs">00</div><div class="ctr-label">Segs</div></div>
+  </div>
+</section>
+
+<footer id="lb-footer">Love Streaming © 2026 · Feito com ❤️</footer>
+
+<!-- VIDEO MODAL -->
+<div id="vmodal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.92);z-index:7000;align-items:center;justify-content:center;">
+  <video id="modal-video" controls playsinline style="max-width:min(90vw,720px);max-height:80vh;border-radius:10px;outline:none;"></video>
+  <button onclick="closeVideo()" style="position:absolute;top:16px;right:20px;background:rgba(255,255,255,.1);border:none;color:#fff;font-size:22px;cursor:pointer;width:40px;height:40px;border-radius:50%;display:flex;align-items:center;justify-content:center;">×</button>
+</div>
+
+<script>
+/* ════════════════════════════════════════════
+   STATE
+════════════════════════════════════════════ */
+let CFG = null;
+let rainTimer = null;
+let ctTimer = null;
+let musicTimer = null;
+let musicPlaying = false;
+let musicCurrentSecs = 0;
+let musicTotalSecs = 0;
+
+/* ════════════════════════════════════════════
+   ENVELOPE GATE
+════════════════════════════════════════════ */
+function openEnvelope() {
+  document.getElementById('envelope-gate').classList.remove('active');
+  startRain();
+}
+
+/* ════════════════════════════════════════════
+   EMOJI RAIN
+════════════════════════════════════════════ */
+function startRain() {
+  if (!CFG?.rain?.on) return;
+  const canvas = document.getElementById('rain-canvas');
+  const emoji = CFG.rain.emoji || '❤️';
+  const speeds = [4, 2.5, 2][(CFG.rain.speed || 2) - 1] || 2.5;
+  const gap = [1200, 800, 500][(CFG.rain.density || 2) - 1] || 800;
+
+  function drop() {
+    const el = document.createElement('div');
+    el.className = 'rain-drop';
+    el.textContent = emoji;
+    const size = 11 + Math.random() * 12;
+    const dur = speeds + Math.random() * 2;
+    el.style.cssText = `left:${Math.random()*100}%;font-size:${size}px;animation-duration:${dur}s`;
+    canvas.appendChild(el);
+    setTimeout(() => el.remove(), dur * 1000 + 200);
+    rainTimer = setTimeout(drop, gap + Math.random() * 400);
+  }
+  drop();
+}
+
+/* ════════════════════════════════════════════
+   SCRATCH / REVEAL
+════════════════════════════════════════════ */
+function revealScratch() {
+  document.getElementById('scratchCover').classList.add('hide');
+  document.getElementById('scratchReveal').classList.add('show');
+}
+
+/* ════════════════════════════════════════════
+   VIDEO MODAL
+════════════════════════════════════════════ */
+function openVideo(url) {
+  const m = document.getElementById('vmodal');
+  document.getElementById('modal-video').src = url;
+  m.style.display = 'flex';
+}
+function closeVideo() {
+  document.getElementById('vmodal').style.display = 'none';
+  document.getElementById('modal-video').pause();
+}
+
+/* ════════════════════════════════════════════
+   MUSIC PLAYER
+════════════════════════════════════════════ */
+function togglePlay() {
+  musicPlaying = !musicPlaying;
+  const icon = document.getElementById('playIcon');
+  icon.innerHTML = musicPlaying
+    ? '<rect x="6" y="4" width="4" height="16" rx="1"/><rect x="14" y="4" width="4" height="16" rx="1"/>'
+    : '<path d="M8 5v14l11-7z"/>';
+  if (musicPlaying) {
+    musicTimer = setInterval(() => {
+      if (musicTotalSecs <= 0) return;
+      musicCurrentSecs = Math.min(musicCurrentSecs + 1, musicTotalSecs);
+      const pct = (musicCurrentSecs / musicTotalSecs) * 100;
+      document.getElementById('musicFill').style.width = pct + '%';
+      const m = Math.floor(musicCurrentSecs / 60), s = String(musicCurrentSecs % 60).padStart(2, '0');
+      document.getElementById('musicCurrent').textContent = `${m}:${s}`;
+      if (musicCurrentSecs >= musicTotalSecs) {
+        clearInterval(musicTimer); musicPlaying = false;
+        icon.innerHTML = '<path d="M8 5v14l11-7z"/>'; musicCurrentSecs = 0;
+      }
+    }, 1000);
+  } else { clearInterval(musicTimer); }
+}
+
+/* ════════════════════════════════════════════
+   COUNTER TICK
+════════════════════════════════════════════ */
+function startCounter(dateStr) {
+  if (!dateStr) return;
+  function tick() {
+    const d = Date.now() - new Date(dateStr + 'T00:00:00').getTime();
+    if (d < 0) return;
+    document.getElementById('cDias').textContent  = String(Math.floor(d / 86400000)).padStart(3, '0');
+    document.getElementById('cHoras').textContent = String(Math.floor((d % 86400000) / 3600000)).padStart(2, '0');
+    document.getElementById('cMins').textContent  = String(Math.floor((d % 3600000) / 60000)).padStart(2, '0');
+    document.getElementById('cSecs').textContent  = String(Math.floor((d % 60000) / 1000)).padStart(2, '0');
+  }
+  tick();
+  ctTimer = setInterval(tick, 1000);
+}
+
+/* ════════════════════════════════════════════
+   REVEAL ON SCROLL
+════════════════════════════════════════════ */
+function initReveal() {
+  const obs = new IntersectionObserver(entries => {
+    entries.forEach(e => { if (e.isIntersecting) e.target.classList.add('visible'); });
+  }, { threshold: 0.12 });
+  document.querySelectorAll('.reveal').forEach(el => obs.observe(el));
+}
+
+/* ════════════════════════════════════════════
+   PARSE MUSIC URL → embed info
+════════════════════════════════════════════ */
+function parseMusicMeta(url) {
+  if (!url) return null;
+  // Spotify track  → extract name from URL path
+  const spMatch = url.match(/spotify\.com\/(?:intl-\w+\/)?track\/([A-Za-z0-9]+)/);
+  if (spMatch) return { platform: 'spotify', id: spMatch[1] };
+  // YouTube
+  const ytMatch = url.match(/(?:youtu\.be\/|youtube\.com\/(?:watch\?v=|embed\/))([A-Za-z0-9_-]{11})/);
+  if (ytMatch) return { platform: 'youtube', id: ytMatch[1] };
+  return { platform: 'url', url };
+}
+
+/* ════════════════════════════════════════════
+   APPLY CONFIG
+════════════════════════════════════════════ */
+function applyConfig(c) {
+  if (!c) return;
+  CFG = c;
+
+  // Accent color
+  const acc = c.customAccent || '#e63946';
+  document.documentElement.style.setProperty('--acc', acc);
+  document.documentElement.style.setProperty('--acc-glow', acc + '55');
+
+  // ── ENVELOPE GATE ──
+  if (c.envelope?.on) {
+    const gate = document.getElementById('envelope-gate');
+    gate.classList.add('active');
+    document.getElementById('env-icon').textContent = c.envelope.icon || '💌';
+    document.getElementById('env-title').textContent = c.envelope.title || 'Você recebeu um presente';
+    document.getElementById('env-sub').textContent   = c.envelope.subtitle || 'Toque para abrir ✦';
+  } else {
+    startRain();
+  }
+
+  // ── HERO ──
+  const receiver = c.receiver || '';
+  const sender   = c.sender   || '';
+  document.title = receiver ? `Para ${receiver} — Love Streaming` : 'Love Streaming';
+  document.getElementById('hero-name').textContent = receiver || 'Love';
+  document.getElementById('hero-sub').textContent  = receiver && sender ? `Para ${receiver}, de ${sender}` : receiver ? `Para ${receiver}` : 'Uma história de amor';
+  document.getElementById('badge-text').textContent = (c.customTagline || '❤️ LoveBuilder').slice(0, 40);
+
+  // Year tag
+  if (c.startDate) {
+    const yr = new Date(c.startDate + 'T00:00:00').getFullYear();
+    const tagYear = document.getElementById('tag-year');
+    if (tagYear && yr) tagYear.textContent = String(yr);
+  }
+
+  // Video as hero background
+  if (c.videoUrl) {
+    const hv = document.getElementById('hero-video');
+    document.getElementById('hero-video-src').src = c.videoUrl;
+    hv.load(); hv.style.display = 'block';
+    // CTA opens modal
+    const cta = document.getElementById('hero-cta');
+    cta.style.display = 'inline-flex';
+    cta.onclick = () => openVideo(c.videoUrl);
+  } else if (c.photos?.length) {
+    // First photo as hero bg
+    const hp = document.getElementById('hero-photo');
+    hp.src = c.photos[0].url;
+    hp.style.display = 'block';
+  }
+
+  // ── CAROUSEL / MOMENTOS ──
+  const photos = c.photos || [];
+  if (photos.length > 0) {
+    document.getElementById('momentos').style.display = 'block';
+    const track = document.getElementById('carouselTrack');
+    track.innerHTML = '';
+    const doubled = [...photos, ...photos];
+    doubled.forEach(p => {
+      if (!p.url) return;
+      const d = document.createElement('div');
+      d.className = 'carousel-card';
+      d.innerHTML = `<img src="${p.url}" alt="momento" loading="lazy">`;
+      track.appendChild(d);
+    });
+    // Adjust animation duration based on count
+    const dur = Math.max(20, photos.length * 5);
+    track.style.animationDuration = dur + 's';
+  }
+
+  // ── DECLARAÇÃO ──
+  if (c.message) {
+    document.getElementById('declaracao').style.display = 'block';
+    document.getElementById('quoteBody').textContent = c.message;
+    const sig = sender && receiver ? `— ${sender}, para ${receiver}` : sender ? `— ${sender}` : '';
+    document.getElementById('quoteSig').textContent = sig;
+  }
+
+  // ── MÚSICA ──
+  const music = parseMusicMeta(c.musicUrl);
+  if (music) {
+    document.getElementById('musica').style.display = 'flex';
+    if (music.platform === 'spotify') {
+      // Show Spotify embed as cover placeholder
+      document.getElementById('musicTrack').textContent = 'Nossa Música';
+      document.getElementById('musicArtist').textContent = 'Spotify';
+      const coverUrl = `https://open.spotify.com/embed/track/${music.id}?utm_source=generator&theme=0`;
+      document.getElementById('musicCover').src = 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200"><rect fill="%231DB954" width="200" height="200"/><text x="100" y="110" font-size="80" text-anchor="middle">🎵</text></svg>';
+      document.getElementById('musicCardBg').style.backgroundImage = "url('data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 200 200%22><rect fill=%22%231DB954%22 width=%22200%22 height=%22200%22/></svg>')";
+      musicTotalSecs = 210;
+    } else if (music.platform === 'youtube') {
+      const thumbUrl = `https://img.youtube.com/vi/${music.id}/mqdefault.jpg`;
+      document.getElementById('musicCover').src = thumbUrl;
+      document.getElementById('musicCardBg').style.backgroundImage = `url('${thumbUrl}')`;
+      document.getElementById('musicTrack').textContent = 'Nossa Música';
+      document.getElementById('musicArtist').textContent = 'YouTube';
+      musicTotalSecs = 210;
+    } else {
+      document.getElementById('musicCover').src = 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200"><rect fill="%230d0d14" width="200" height="200"/><text x="100" y="110" font-size="80" text-anchor="middle">🎵</text></svg>';
+      musicTotalSecs = 210;
+    }
+    const m = Math.floor(musicTotalSecs / 60), s = String(musicTotalSecs % 60).padStart(2, '0');
+    document.getElementById('musicTotal').textContent = `${m}:${s}`;
+  }
+
+  // ── TIMELINE (fotos como capítulos) ──
+  if (photos.length > 0) {
+    document.getElementById('timeline').style.display = 'block';
+    const wrap = document.getElementById('timelineWrap');
+    wrap.innerHTML = '';
+    photos.forEach((p, i) => {
+      if (!p.url) return;
+      const dateStr = p.date ? new Date(p.date + 'T00:00:00').toLocaleDateString('pt-BR', { day: 'numeric', month: 'long', year: 'numeric' }) : '';
+      const item = document.createElement('div');
+      item.className = 'tl-item reveal';
+      item.innerHTML = `
+        <div class="tl-img-side">
+          <div class="tl-img"><img src="${p.url}" alt="momento ${i+1}" loading="lazy"></div>
+        </div>
+        <div class="tl-dot-col"><div class="tl-dot"></div></div>
+        <div class="tl-text-side">
+          ${dateStr ? `<div class="tl-date">${dateStr}</div>` : ''}
+          <h3 class="tl-title">Momento ${String(i+1).padStart(2,'0')}</h3>
+          <p class="tl-desc">${receiver ? `Um capítulo especial para ${receiver}.` : 'Um momento especial.'}</p>
+        </div>`;
+      wrap.appendChild(item);
+    });
+    // Re-observe new reveal elements
+    initReveal();
+  }
+
+  // ── MENSAGEM SECRETA ──
+  if (c.secretMessage) {
+    document.getElementById('scratch-section').style.display = 'block';
+    document.getElementById('scratchText').textContent = c.secretMessage;
+  }
+
+  // ── CONTADOR ──
+  if (c.startDate && c.widgets?.counter) {
+    document.getElementById('contador').style.display = 'block';
+    startCounter(c.startDate);
+  }
+
+  // ── SCROLL REVEAL ──
+  initReveal();
+}
+
+/* ════════════════════════════════════════════
+   RECEIVE postMessage FROM PARENT (preview iframe)
+════════════════════════════════════════════ */
+window.addEventListener('message', e => {
+  if (e.data?.type === 'LB_CONFIG') applyConfig(e.data.config);
+});
+
+/* ════════════════════════════════════════════
+   STANDALONE: load from Supabase by slug
+════════════════════════════════════════════ */
+if (window.self === window.top) {
+  const params  = new URLSearchParams(window.location.search);
+  const slug    = params.get('c') || params.get('slug');
+  const SB_URL  = 'https://gmzlzgdwacwdapzxcior.supabase.co';
+  const SB_KEY  = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imdtemx6Z2R3YWN3ZGFwenhjaW9yIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzE3OTg3NjEsImV4cCI6MjA4NzM3NDc2MX0.n2XVUwxUoaaLxrLqSYQ6TFbeDuf6pBEEasgapJuHRf0';
+  if (slug) {
+    fetch(`${SB_URL}/rest/v1/cards?slug=eq.${encodeURIComponent(slug)}&published=eq.true&select=config`, {
+      headers: { 'apikey': SB_KEY, 'Authorization': 'Bearer ' + SB_KEY }
+    })
+    .then(r => r.json())
+    .then(data => { if (data[0]?.config) applyConfig(data[0].config); })
+    .catch(() => {});
+  }
+}
+</script>
+</body>
+</html>

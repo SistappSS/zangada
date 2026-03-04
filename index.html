@@ -1,0 +1,2202 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover"/>
+  <title>LoveBuilder | Crie seu presente digital</title>
+
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,700;0,9..144,900;1,9..144,400&family=DM+Sans:wght@300;400;500;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'DM Sans', sans-serif; background: #07070f; color: #ededf5; overflow-x: hidden; min-height: 100vh; }
+    body::after { content:''; position:fixed; inset:0; opacity:.025; pointer-events:none; z-index:9999; background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"); }
+    input,textarea,select,button { font-family:'DM Sans',sans-serif; color:#ededf5; outline:none; }
+    .hs { scrollbar-width:none; } .hs::-webkit-scrollbar { display:none; }
+    .inp { width:100%; background:rgba(255,255,255,.05); border:1px solid rgba(255,255,255,.09); border-radius:11px; padding:10px 13px; font-size:13px; transition:border-color .17s, background .17s; }
+    .inp:focus { border-color:rgba(255,255,255,.26); background:rgba(255,255,255,.08); }
+    .inp::placeholder { color:rgba(255,255,255,.28); }
+    textarea.inp { resize:none; }
+    .sec { font-size:9.5px; font-weight:800; letter-spacing:.22em; text-transform:uppercase; color:rgba(255,255,255,.36); display:block; margin-bottom:8px; }
+    .tog { display:flex; align-items:center; justify-content:space-between; padding:11px 13px; border-radius:13px; cursor:pointer; background:rgba(255,255,255,.04); border:1px solid rgba(255,255,255,.08); transition:all .17s; user-select:none; }
+    .tog:hover { background:rgba(255,255,255,.07); }
+    .tog.on { background:rgba(255,255,255,.07); border-color:rgba(255,255,255,.17); }
+    .dot { width:7px; height:7px; border-radius:50%; transition:all .25s; flex-shrink:0; }
+    .dot.on { background:#4ade80; box-shadow:0 0 8px #4ade8088; }
+    .dot.off { background:rgba(255,255,255,.16); }
+    .sub { overflow:hidden; transition:max-height .38s ease, opacity .3s; }
+    .sub.open { max-height:900px; opacity:1; }
+    .sub.closed { max-height:0; opacity:0; pointer-events:none; }
+    .sub-body { background:rgba(255,255,255,.03); border:1px solid rgba(255,255,255,.07); border-radius:13px; padding:14px; margin-top:8px; display:flex; flex-direction:column; gap:12px; }
+    .step-bar { display:flex; gap:3px; padding:4px; background:rgba(255,255,255,.05); border:1px solid rgba(255,255,255,.07); border-radius:14px; }
+    .step-btn { flex:1; padding:8px 4px; border-radius:10px; font-size:11px; font-weight:700; text-align:center; cursor:pointer; color:rgba(255,255,255,.4); background:transparent; border:none; transition:all .17s; white-space:nowrap; }
+    .step-btn.active { background:rgba(255,255,255,.12); color:#fff; border:1px solid rgba(255,255,255,.15); }
+    .tc { border-radius:14px; overflow:hidden; cursor:pointer; border:2px solid rgba(255,255,255,.07); transition:transform .17s, border-color .17s; }
+    .tc:hover { transform:translateY(-2px); }
+    .tc.sel { border-color:rgba(255,255,255,.65); }
+    .sw { width:26px; height:26px; border-radius:50%; cursor:pointer; border:2px solid transparent; transition:transform .15s, border-color .15s; flex-shrink:0; }
+    .sw:hover { transform:scale(1.13); }
+    .sw.active { border-color:white; transform:scale(1.2); }
+    .eb { aspect-ratio:1; border-radius:9px; font-size:17px; display:flex; align-items:center; justify-content:center; cursor:pointer; background:rgba(255,255,255,.04); border:1.5px solid rgba(255,255,255,.07); transition:all .14s; padding:4px; }
+    .eb:hover { background:rgba(255,255,255,.09); transform:scale(1.07); }
+    .eb.active { border-color:rgba(255,255,255,.55); background:rgba(255,255,255,.14); transform:scale(1.1); }
+    .gb { padding:10px 6px; border-radius:12px; cursor:pointer; color:#fff; font-size:11px; font-weight:700; display:flex; flex-direction:column; align-items:center; gap:4px; transition:all .17s; background:rgba(255,255,255,.04); border:1px solid rgba(255,255,255,.08); }
+    .gb.sel { border-color:rgba(255,255,255,.45); background:rgba(255,255,255,.1); }
+    input[type=range] { -webkit-appearance:none; width:100%; height:4px; border-radius:99px; background:rgba(255,255,255,.1); cursor:pointer; }
+    input[type=range]::-webkit-slider-thumb { -webkit-appearance:none; width:16px; height:16px; border-radius:50%; background:#fff; }
+    input[type=color] { padding:0; cursor:pointer; border:none; background:transparent; width:32px; height:32px; border-radius:8px; overflow:hidden; }
+    @keyframes fall { 0%{transform:translateY(-60px) rotate(0);opacity:1} 100%{transform:translateY(110vh) rotate(720deg);opacity:0} }
+    .part { position:absolute; pointer-events:none; animation:fall linear forwards; z-index:10; }
+    @keyframes fadein { from{opacity:0;transform:translateY(6px)} to{opacity:1;transform:translateY(0)} }
+    .fadein { animation:fadein .28s ease forwards; }
+    .pub { width:100%; padding:14px; border:none; border-radius:15px; font-size:14px; font-weight:800; cursor:pointer; color:#fff; transition:transform .15s, box-shadow .15s; }
+
+    /* ── MOBILE FLOATING UI ── */
+    #floating-tab {
+      display:none;
+      position:fixed; bottom:76px; left:50%; transform:translateX(-50%);
+      z-index:300;
+      background:rgba(14,14,26,.88); backdrop-filter:blur(20px) saturate(1.4);
+      border:1px solid rgba(255,255,255,.14); border-radius:99px;
+      padding:5px; gap:4px;
+      box-shadow:0 8px 32px rgba(0,0,0,.6), 0 0 0 1px rgba(255,255,255,.04);
+    }
+    #floating-tab button {
+      padding:9px 24px; border-radius:99px; font-size:12px; font-weight:800;
+      cursor:pointer; border:none; transition:all .18s; white-space:nowrap;
+    }
+    #floating-tab button.active  { background:#fff; color:#07070f; box-shadow:0 2px 10px rgba(0,0,0,.3); }
+    #floating-tab button:not(.active) { background:transparent; color:rgba(255,255,255,.45); }
+
+    #floating-nav {
+      display:none;
+      position:fixed; bottom:0; left:0; right:0; z-index:299;
+      padding:10px 16px calc(env(safe-area-inset-bottom, 0px) + 14px);
+      background:linear-gradient(to top, rgba(7,7,15,1) 55%, rgba(7,7,15,.0));
+      gap:10px;
+    }
+    #floating-nav button { flex:1; padding:14px; border-radius:16px; font-size:14px; font-weight:900; cursor:pointer; border:none; }
+    #floating-nav .btn-back { background:rgba(255,255,255,.09); color:rgba(255,255,255,.7); border:1px solid rgba(255,255,255,.1); }
+    #floating-nav .btn-next { background:#fff; color:#07070f; }
+
+    /* step bar: pills compactos, sem overflow */
+    .step-bar { display:grid !important; gap:3px; padding:4px; background:rgba(255,255,255,.05); border:1px solid rgba(255,255,255,.07); border-radius:14px; }
+    .step-btn  { padding:7px 2px; border-radius:10px; font-size:10px; font-weight:700; text-align:center; cursor:pointer; color:rgba(255,255,255,.4); background:transparent; border:none; transition:all .17s; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+    .step-btn.active { background:rgba(255,255,255,.13); color:#fff; border:1px solid rgba(255,255,255,.15); }
+    .step-num { display:block; font-size:8px; opacity:.45; margin-bottom:1px; }
+
+    @media (max-width:1023px) {
+      /* nav fixo no topo — sem espaçamento indesejado ao scrollar */
+      nav { position:fixed !important; top:0; left:0; right:0; z-index:400; }
+      #root { padding-top:52px; }
+      /* floating UI visível */
+      #floating-tab { display:flex !important; }
+      #floating-nav { display:flex !important; }
+      /* esconde nav antigo e botões inline */
+      #mtog { display:none !important; }
+      .desktop-nav { display:none !important; }
+      /* espaço para barra flutuante */
+      #binner { padding-bottom:140px !important; }
+      /* step bar: 5 colunas iguais */
+      .step-bar { grid-template-columns:repeat(5,1fr) !important; }
+    }
+    @media (max-width:359px)  { .phone-wrap { transform:scale(.70); margin-bottom:-170px; } }
+    @media (min-width:360px) and (max-width:479px) { .phone-wrap { transform:scale(.80); margin-bottom:-110px; } }
+    @media (min-width:480px) and (max-width:767px) { .phone-wrap { transform:scale(.90); margin-bottom:-50px; } }
+    @media (min-width:1024px) {
+      #layout { display:grid; grid-template-columns:420px 1fr; height:calc(100vh - 52px); overflow:hidden; }
+      #builder { display:block !important; overflow-y:auto; border-right:1px solid rgba(255,255,255,.06); }
+      #preview { display:flex !important; }
+      #mtog { display:none !important; }
+      #floating-tab { display:none !important; }
+      #floating-nav { display:none !important; }
+      .step-bar { grid-template-columns:repeat(5,1fr) !important; }
+    }
+    .pub:hover { transform:scale(1.02); }
+    .ring { position:absolute; border-radius:50%; border:1px solid rgba(255,255,255,.025); pointer-events:none; top:50%; left:50%; transform:translate(-50%,-50%); }
+    #root { display:flex; flex-direction:column; min-height:100vh; }
+    nav { position:sticky; top:0; z-index:200; backdrop-filter:blur(24px); background:rgba(7,7,15,.88); border-bottom:1px solid rgba(255,255,255,.06); padding:0 16px; height:52px; display:flex; align-items:center; justify-content:space-between; flex-shrink:0; }
+    #layout { display:flex; flex:1; flex-direction:column; }
+    #builder { width:100%; overflow-y:auto; scrollbar-width:thin; scrollbar-color:rgba(255,255,255,.08) transparent; }
+    #builder::-webkit-scrollbar { width:3px; }
+    #builder::-webkit-scrollbar-thumb { background:rgba(255,255,255,.08); border-radius:99px; }
+    #binner { padding:18px 16px 40px; max-width:480px; margin:0 auto; display:flex; flex-direction:column; gap:18px; }
+    #preview { display:none; width:100%; align-items:flex-start; justify-content:center; padding:28px 16px 48px; background:radial-gradient(ellipse at 50% 18%,rgba(255,255,255,.025) 0%,transparent 70%); position:relative; overflow:hidden; }
+    .phone-wrap { transform-origin:top center; }
+    @media (max-width:359px)  { .phone-wrap { transform:scale(.70); margin-bottom:-170px; } }
+    @media (min-width:360px) and (max-width:479px) { .phone-wrap { transform:scale(.80); margin-bottom:-110px; } }
+    @media (min-width:480px) and (max-width:767px) { .phone-wrap { transform:scale(.90); margin-bottom:-50px; } }
+    @media (min-width:1024px) {
+      #layout { flex-direction:row; }
+      #builder { width:456px; flex-shrink:0; max-height:calc(100vh - 52px); position:sticky; top:52px; border-right:1px solid rgba(255,255,255,.06); }
+      #binner { max-width:456px; margin:0; padding:20px 20px 48px; }
+      #preview { display:flex !important; flex:1; min-height:calc(100vh - 52px); }
+      #mtog { display:none !important; }
+    }
+  </style>
+</head>
+
+<body>
+<div id="root"></div>
+
+<script type="text/babel">
+const { useCallback, useEffect, useMemo, useRef, useState } = React;
+
+const APP_URL = "https://zangada.cliqis.com.br";
+const SUPABASE_URL = "https://gmzlzgdwacwdapzxcior.supabase.co";
+const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imdtemx6Z2R3YWN3ZGFwenhjaW9yIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzE3OTg3NjEsImV4cCI6MjA4NzM3NDc2MX0.n2XVUwxUoaaLxrLqSYQ6TFbeDuf6pBEEasgapJuHRf0";
+const FUNCTIONS_BASE = `${SUPABASE_URL}/functions/v1`;
+
+const SB_OK = SUPABASE_URL && SUPABASE_ANON_KEY && !SUPABASE_URL.includes("SEU_") && !SUPABASE_ANON_KEY.includes("SUA_");
+const sb = SB_OK ? window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY) : null;
+
+/* ── Helpers ── */
+function shareUrlFromSlug(slug){ return `${APP_URL}/?c=${encodeURIComponent(slug)}`; }
+// Valida URL de vídeo: deve ser .mp4/.webm/.ogg, https, e avisa sobre tamanho
+async function validateVideoUrl(url){
+  if(!url) return {ok:true};
+  if(!/^https?:\/\//i.test(url)) return {ok:false, msg:"Use uma URL https://…"};
+  if(!/\.(mp4|webm|ogg)(\?.*)?$/i.test(url)) return {ok:false, msg:"Formato não suportado. Use .mp4, .webm ou .ogg"};
+  // HEAD request para verificar tamanho (10 MB = 10_485_760 bytes)
+  try{
+    const r=await fetch(url,{method:"HEAD",mode:"cors"});
+    const size=parseInt(r.headers.get("content-length")||"0");
+    if(size>10_485_760) return {ok:false, msg:`Vídeo muito grande (${(size/1e6).toFixed(1)} MB). Máximo: 10 MB.`};
+  }catch(e){ /* CORS pode bloquear HEAD — não é erro crítico */ }
+  return {ok:true};
+}
+
+function safeSlug(s){
+  return (s||"").trim().toLowerCase()
+    .replace(/\s+/g,"-").replace(/[^a-z0-9\-]/g,"").replace(/\-+/g,"-").slice(0,48);
+}
+function uid(){ return `p_${Date.now()}_${Math.random().toString(36).slice(2,6)}`; }
+
+// Gera sufixo aleatório curto: 4 chars alfanuméricos (a-z0-9, sem I/O/l/0 para legibilidade)
+function randSuffix(){
+  const chars="abcdefghjkmnpqrstuvwxyz23456789";
+  let s="";for(let i=0;i<4;i++) s+=chars[Math.floor(Math.random()*chars.length)];
+  return s;
+}
+// Slug com sufixo: "nossa-historia-x7k2"
+function slugWithSuffix(base,suffix){ const b=safeSlug(base).slice(0,42)||"cartao"; return `${b}-${suffix}`; }
+// Extrai parte legível (sem sufixo)
+function slugBase(slug){ const p=slug.split("-"); return p.length>1?p.slice(0,-1).join("-"):slug; }
+// Verifica unicidade no Supabase (retorna true se disponível)
+async function checkSlugAvailable(slug){
+  if(!sb||!slug) return true;
+  const {data}=await sb.from("cards").select("id").eq("slug",slug).maybeSingle();
+  return !data;
+}
+function calcTime(d){
+  if(!d) return {d:0,h:0,m:0,ok:false};
+  const s=new Date(d+"T00:00:00");
+  if(isNaN(s)) return {d:0,h:0,m:0,ok:false};
+  let dt=Math.max(0,Date.now()-s.getTime());
+  const days=Math.floor(dt/86400000); dt-=days*86400000;
+  const hrs=Math.floor(dt/3600000); dt-=hrs*3600000;
+  return {d:days,h:hrs,m:Math.floor(dt/60000),ok:true};
+}
+function parseMusic(url){
+  if(!url) return null;
+  try{
+    const u=new URL(url.trim());
+    if(u.hostname.includes("spotify.com")){
+      const [t,id]=u.pathname.split("/").filter(Boolean);
+      if(t && id) return {kind:"spotify",src:`https://open.spotify.com/embed/${t}/${id}?utm_source=generator`};
+    }
+    if(u.hostname.includes("youtube.com")||u.hostname.includes("youtu.be")){
+      const v=u.hostname.includes("youtu.be")?u.pathname.slice(1):u.searchParams.get("v");
+      if(v) return {kind:"youtube",src:`https://www.youtube.com/embed/${v}`};
+    }
+  }catch(e){}
+  return null;
+}
+function fileToBase64(file){
+  return new Promise((resolve,reject)=>{
+    const r=new FileReader();
+    r.onload=()=>{ const s=String(r.result||""); resolve(s.split(",")[1]||""); };
+    r.onerror=reject;
+    r.readAsDataURL(file);
+  });
+}
+
+/* ── ✅ CORRIGIDO: goToStripeCheckout só recebe slug ── */
+async function goToStripeCheckout(slug){
+  const res = await fetch(`${FUNCTIONS_BASE}/create-checkout`, {
+    method: "POST",
+    headers: {
+      "content-type": "application/json",
+      "apikey": SUPABASE_ANON_KEY,
+      "authorization": `Bearer ${SUPABASE_ANON_KEY}`,
+    },
+    body: JSON.stringify({ slug }),
+  });
+
+  const text = await res.text();
+  let data = {};
+  try { data = JSON.parse(text); } catch {}
+
+  if(!res.ok) throw new Error(data?.error || `HTTP ${res.status}: ${text}`);
+  if(!data?.url) throw new Error(data?.error || "Sem url no retorno");
+
+  window.location.href = data.url;
+}
+
+/* ── DATA ── */
+/* ── TEMPLATES ── */
+const TEMPLATES = {
+  classic: {
+    id:"classic",
+    label:"Clássico",
+    icon:"💌",
+    desc:"O cartão romântico original",
+    color:"#f43f5e",
+    previewBg:"linear-gradient(135deg,#1e0010,#0c0c1a)",
+    external:false,          // renderizado pelo Phone/CardPage interno
+  },
+  netflix: {
+    id:"netflix",
+    label:"Netflix",
+    icon:"🎬",
+    desc:"Estilo série — com vídeo e episódios",
+    color:"#E50914",
+    previewBg:"linear-gradient(135deg,#1a0000,#0d0d0d)",
+    external:true,           // carregado de /templates/netflix.html
+    file:"/templates/netflix.html",
+    extraFields:["videoUrl","videoCaption"], // campos extras no form
+  },
+};
+
+const THEMES = {
+  classic:{ id:"classic", label:"Romance",        icon:"💖", dt:"Feliz Dia dos Namorados", accent:"#f43f5e", bg:"linear-gradient(155deg,#1e0010 0%,#0c0c1a 100%)", prev:"#3b0018" },
+  netflix:{ id:"netflix", label:"Netflix & Chill", icon:"🎬", dt:"Nossa Série Favorita",    accent:"#E50914", bg:"linear-gradient(155deg,#1a0000 0%,#0d0d0d 100%)", prev:"#1a0000" },
+  disney: { id:"disney",  label:"Disney Magic",   icon:"✨", dt:"Nosso Conto de Fadas",    accent:"#2563EB", bg:"linear-gradient(155deg,#000d28 0%,#05071a 100%)", prev:"#000d28" },
+  travel: { id:"travel",  label:"Travel Together",icon:"✈️", dt:"Nossas Aventuras",        accent:"#059669", bg:"linear-gradient(155deg,#001a0d 0%,#050d0d 100%)", prev:"#001a0d" },
+  sunset: { id:"sunset",  label:"Golden Hour",    icon:"🌅", dt:"Cada Pôr do Sol Contigo", accent:"#f59e0b", bg:"linear-gradient(155deg,#1a0900 0%,#0d0805 100%)", prev:"#1a0900" },
+  night:  { id:"night",   label:"Midnight",       icon:"🌙", dt:"Sob as Estrelas",         accent:"#8b5cf6", bg:"linear-gradient(155deg,#080020 0%,#090915 100%)", prev:"#080020" },
+};
+const PALETTE = ["#f43f5e","#ef4444","#f97316","#f59e0b","#eab308","#22c55e","#059669","#14b8a6","#06b6d4","#3b82f6","#6366f1","#8b5cf6","#a855f7","#d946ef","#ec4899","#ffffff"];
+const ESETS = {
+  love:  { l:"Amor",   e:["❤️","💕","💖","💗","💝","🌹","😘","💌","🥰","💓","💞","💟"] },
+  movie: { l:"Cinema", e:["🎬","🍿","🎭","🎞️","🌟","⭐","🎥","🎦","📽️","🎪","🏆","🎫"] },
+  travel:{ l:"Viagem", e:["✈️","🗺️","📸","🌍","🏖️","⛰️","🗼","🏝️","🧳","🌄","🎒","🌅"] },
+  magic: { l:"Magia",  e:["✨","⭐","🌟","💫","🌠","🪄","🔮","🌈","🎆","🎇","🪅","🎠"] },
+  night: { l:"Noite",  e:["🌙","⭐","🌌","🌠","🌃","💫","🌟","🌒","🔭","🌑","✨","☁️"] },
+  party: { l:"Festa",  e:["🎉","🎊","🥂","🎈","🎁","🎀","🪅","🎆","🎇","🎂","🍾","🥳"] },
+};
+const ENV_ICONS=["💖","🎁","🎀","💌","🎊","🌹","✨","🔮","🌟","💍","🎬","✈️","🌅","🌙","🎉","🎭","🃏","🧸","🎵","🏆","🦋","🌻","🍀","🫀","🌙","💎","🎪","🎠","🌈","🔑"];
+
+function normalize(raw){
+  const def={
+    templateId:"classic", themeId:"classic", slug:"", customTagline:"", customAccent:"",
+    receiver:"", sender:"", message:"", startDate:"", secretMessage:"", musicUrl:"",
+    videoUrl:"", videoCaption:"",
+    photos:[], galleryStyle:"polaroid",
+    rain:{on:true,emoji:"❤️",speed:2,density:2,eset:"love"},
+    envelope:{on:true,icon:"💖",title:"Você recebeu um presente",subtitle:"Toque no envelope para abrir ✦"},
+    widgets:{gallery:true,counter:true,scratch:true},
+    contact:{name:"",email:"",phone:""},
+  };
+  const c={...def,...(raw||{})};
+  if(!["classic","netflix"].includes(c.templateId)) c.templateId="classic";
+  c.rain={...def.rain,...(c.rain||{})};
+  c.envelope={...def.envelope,...(c.envelope||{})};
+  c.widgets={...def.widgets,...(c.widgets||{})};
+  c.contact={...def.contact,...(c.contact||{})};
+  c.slug=safeSlug(c.slug);
+  c.photos=(Array.isArray(c.photos)?c.photos:[])
+    .map(p=>{
+      if(typeof p==="string") return {id:uid(),url:p,date:""};
+      return {id:p.id||uid(),url:p.url,date:p.date||"",name:p.name||"photo.jpg",type:p.type||"image/jpeg",base64:p.base64||"",_local:!!p._local};
+    }).filter(p=>p.url);
+  if(!THEMES[c.themeId]) c.themeId="classic";
+  return c;
+}
+
+/* ── SCRATCH ── */
+const Scratch=({message,accent})=>{
+  const cv=useRef(null);const[done,setDone]=useState(false);const dn=useRef(false);
+  useEffect(()=>{
+    const c=cv.current;if(!c)return;
+    const ctx=c.getContext("2d",{willReadFrequently:true});
+    const r=devicePixelRatio||1;
+    c.width=c.clientWidth*r; c.height=c.clientHeight*r;
+    ctx.setTransform(r,0,0,r,0,0);
+    const w=c.clientWidth,h=c.clientHeight;
+    ctx.fillStyle="rgba(10,10,22,.96)"; ctx.fillRect(0,0,w,h);
+    const g=ctx.createLinearGradient(0,0,w,h);
+    g.addColorStop(0,"rgba(255,255,255,.09)"); g.addColorStop(1,"rgba(255,255,255,.02)");
+    ctx.fillStyle=g; ctx.fillRect(0,0,w,h);
+    ctx.fillStyle="rgba(255,255,255,.6)"; ctx.font="700 11px 'DM Sans'"; ctx.textAlign="center";
+    ctx.fillText("✦ RASPE AQUI ✦",w/2,h/2+4);
+    setDone(false);
+  },[message]);
+  const sc=(cx,cy)=>{
+    const c=cv.current;if(!c)return;
+    const r=c.getBoundingClientRect();
+    const ctx=c.getContext("2d");
+    ctx.globalCompositeOperation="destination-out";
+    ctx.beginPath(); ctx.arc(cx-r.left,cy-r.top,20,0,Math.PI*2); ctx.fill();
+    ctx.globalCompositeOperation="source-over";
+    if(!done){
+      const d=ctx.getImageData(0,0,c.width,c.height).data;
+      let t=0; for(let i=3;i<d.length;i+=256) if(d[i]===0) t++;
+      if(t/(d.length/256)>.4) setDone(true);
+    }
+  };
+  const onD=e=>{dn.current=true;const t=e.touches?.[0];sc(t?.clientX??e.clientX,t?.clientY??e.clientY);};
+  const onM=e=>{if(!dn.current)return;const t=e.touches?.[0];sc(t?.clientX??e.clientX,t?.clientY??e.clientY);};
+  return(
+    <div style={{background:"rgba(255,255,255,.04)",border:"1px solid rgba(255,255,255,.1)",borderRadius:18,overflow:"hidden",position:"relative"}}>
+      <div style={{padding:"13px 15px",textAlign:"center"}}>
+        <p style={{fontSize:9,letterSpacing:".22em",textTransform:"uppercase",color:"rgba(255,255,255,.4)",fontWeight:700,marginBottom:5}}>Mensagem Secreta</p>
+        <p style={{fontSize:12,fontStyle:"italic",color:"rgba(255,255,255,.85)",lineHeight:1.55}}>"{message||"Sua mensagem secreta aqui…"}"</p>
+      </div>
+      {!done && (
+        <div style={{position:"absolute",inset:0,touchAction:"none"}} onMouseDown={onD} onMouseMove={onM} onMouseUp={()=>dn.current=false} onMouseLeave={()=>dn.current=false} onTouchStart={onD} onTouchMove={onM} onTouchEnd={()=>dn.current=false}>
+          <canvas ref={cv} style={{width:"100%",height:"100%",display:"block"}}/>
+          <div style={{position:"absolute",top:7,right:9,fontSize:8,fontWeight:800,color:accent,background:"rgba(0,0,0,.5)",padding:"3px 7px",borderRadius:20,letterSpacing:".1em"}}>RASPE</div>
+        </div>
+      )}
+    </div>
+  );
+};
+
+/* ── CAROUSEL ── */
+const Carousel=({photos,accent})=>{
+  const ref=useRef(null);
+  const [active,setActive]=useState(0);
+  const list=(photos&&photos.length)?photos:[{id:"ph",url:"",date:""}];
+  useEffect(()=>{ setActive(0); if(ref.current) ref.current.scrollTo({left:0,behavior:"auto"}); },[photos?.length]);
+  const calcActive=()=>{
+    const el=ref.current;if(!el)return;
+    const cx=el.scrollLeft+el.clientWidth/2;
+    let best=0,bd=Infinity;
+    Array.from(el.children).forEach((c,i)=>{ const x=c.offsetLeft+c.clientWidth/2; const d=Math.abs(x-cx); if(d<bd){bd=d;best=i;} });
+    setActive(best);
+  };
+  const go=(i)=>{ const el=ref.current;if(!el)return; const t=el.children[i];if(!t)return; el.scrollTo({left:t.offsetLeft-(el.clientWidth-t.clientWidth)/2,behavior:"smooth"}); };
+  return(
+    <div style={{position:"relative"}}>
+      <div ref={ref} onScroll={calcActive} className="hs" style={{display:"flex",gap:12,overflowX:"auto",padding:"2px 22px 26px",scrollSnapType:"x mandatory",WebkitOverflowScrolling:"touch"}}>
+        {list.map((p,i)=>(
+          <div key={p.id||i} style={{flex:"0 0 78%",scrollSnapAlign:"center"}}>
+            <div style={{borderRadius:18,overflow:"hidden",border:"1px solid rgba(255,255,255,.10)",background:"rgba(255,255,255,.06)",boxShadow:i===active?`0 18px 60px ${accent}25`:"0 18px 60px rgba(0,0,0,.45)",transform:i===active?"scale(1)":"scale(.92)",opacity:i===active?1:.72,transition:"transform .18s, opacity .18s, box-shadow .18s"}}>
+              {p.url?(
+                <div style={{position:"relative"}}>
+                  <img src={p.url} style={{width:"100%",height:"auto",display:"block",maxHeight:380,objectFit:"contain"}}/>
+                  <div style={{position:"absolute",inset:0,background:"linear-gradient(to top, rgba(0,0,0,.65), transparent 55%)"}}/>
+                  <div style={{position:"absolute",left:12,bottom:10,right:12,display:"flex",justifyContent:"space-between",alignItems:"end",gap:10}}>
+                    <div style={{minWidth:0}}>
+                      <div style={{fontSize:11,fontWeight:900,letterSpacing:".02em"}}>Momento {i+1}</div>
+                      {p.date&&<div style={{fontSize:10,color:"rgba(255,255,255,.65)",marginTop:1}}>{new Date(p.date+"T00:00:00").toLocaleDateString("pt-BR")}</div>}
+                    </div>
+                    <div style={{flexShrink:0,background:`${accent}22`,border:`1px solid ${accent}44`,color:accent,borderRadius:999,padding:"3px 9px",fontSize:9,fontWeight:900,letterSpacing:".12em"}}>LOVE</div>
+                  </div>
+                </div>
+              ):(
+                <div style={{height:160,display:"flex",alignItems:"center",justifyContent:"center",fontSize:30,opacity:.6}}>📷</div>
+              )}
+            </div>
+          </div>
+        ))}
+      </div>
+      {list.length>1&&(
+        <div style={{display:"flex",justifyContent:"center",gap:6,position:"absolute",bottom:8,left:0,right:0}}>
+          {list.map((_,i)=>(
+            <div key={i} onClick={()=>go(i)} style={{width:5,height:5,borderRadius:"50%",background:i===active?accent:"rgba(255,255,255,.3)",cursor:"pointer",transform:i===active?"scale(1.6)":"scale(1)",transition:"transform .18s, background .18s"}}/>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+};
+
+/* ── PHONE ── */
+const Phone=({config,theme,accent,particles})=>{
+  const lt=useMemo(()=>calcTime(config.startDate),[config.startDate]);
+  const music=useMemo(()=>parseMusic(config.musicUrl),[config.musicUrl]);
+  const [opened,setOpened]=useState(false);
+  useEffect(()=>setOpened(!config.envelope.on),[config.envelope.on]);
+  const tagline=config.customTagline||theme.dt;
+  return(
+    <div className="phone-wrap" style={{filter:`drop-shadow(0 0 70px ${accent}30)`}}>
+      <div style={{width:310,height:640,background:"linear-gradient(145deg,#1c1c28,#111118)",borderRadius:50,padding:9,boxShadow:"inset 0 0 0 1px rgba(255,255,255,.12), 0 36px 90px rgba(0,0,0,.65), 0 0 0 9px #0e0e1a",position:"relative"}}>
+        <div style={{position:"absolute",right:-3,top:90,width:3,height:32,background:"rgba(255,255,255,.09)",borderRadius:"0 3px 3px 0"}}/>
+        <div style={{position:"absolute",left:-3,top:72,width:3,height:26,background:"rgba(255,255,255,.09)",borderRadius:"3px 0 0 3px"}}/>
+        <div style={{position:"absolute",left:-3,top:106,width:3,height:26,background:"rgba(255,255,255,.09)",borderRadius:"3px 0 0 3px"}}/>
+        <div style={{width:"100%",height:"100%",background:theme.bg,borderRadius:41,overflow:"hidden",position:"relative"}}>
+          {config.rain.on&&particles.map(p=>(
+            <div key={p.id} className="part" style={{left:`${p.left}%`,top:0,fontSize:p.size,animationDuration:`${p.dur}s`}}>{p.emoji}</div>
+          ))}
+          <div style={{position:"absolute",top:-70,left:-50,width:220,height:220,background:accent,borderRadius:"50%",filter:"blur(90px)",opacity:.14,pointerEvents:"none"}}/>
+          <div style={{position:"absolute",bottom:-50,right:-30,width:160,height:160,background:accent,borderRadius:"50%",filter:"blur(70px)",opacity:.08,pointerEvents:"none"}}/>
+          <div className="hs" style={{height:"100%",overflowY:(config.envelope.on&&!opened)?"hidden":"auto"}}>
+            <div style={{padding:"10px 14px 40px"}}>
+              <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:12,opacity:.4}}>
+                <span style={{fontFamily:"monospace",fontSize:10,fontWeight:700}}>9:41</span>
+                <div style={{display:"flex",gap:3,fontSize:10}}>▲ WiFi 🔋</div>
+              </div>
+              <div style={{width:80,height:5,background:"rgba(255,255,255,.07)",borderRadius:99,margin:"0 auto 18px"}}/>
+              <div style={{background:`linear-gradient(135deg,${accent}18,transparent)`,borderRadius:22,padding:"17px 14px",textAlign:"center",marginBottom:13,border:"1px solid rgba(255,255,255,.07)"}}>
+                <div style={{display:"inline-flex",alignItems:"center",gap:6,background:`${accent}22`,border:`1px solid ${accent}44`,borderRadius:999,padding:"3px 12px",fontSize:9,fontWeight:900,letterSpacing:".18em",textTransform:"uppercase",color:accent,marginBottom:10}}>
+                  <span style={{fontSize:12}}>{theme.icon}</span>{tagline}
+                </div>
+                <div style={{fontSize:24,fontFamily:"Fraunces,serif",fontWeight:900,lineHeight:1.1,marginBottom:3}}>Para {config.receiver||"o meu amor"}</div>
+                <div style={{fontSize:11,color:"rgba(255,255,255,.5)",fontWeight:500}}>com carinho de {config.sender||"alguém especial"}</div>
+              </div>
+              {config.widgets.counter&&(
+                <div style={{background:"rgba(255,255,255,.04)",border:"1px solid rgba(255,255,255,.08)",borderRadius:20,padding:"13px",textAlign:"center",marginBottom:12}}>
+                  <div style={{fontSize:8,letterSpacing:".22em",textTransform:"uppercase",color:"rgba(255,255,255,.4)",fontWeight:700,marginBottom:8}}>juntos há</div>
+                  <div style={{display:"flex",alignItems:"center",justifyContent:"center",gap:6}}>
+                    {[lt.d,lt.h,lt.m].map((v,i)=>(
+                      <React.Fragment key={i}>
+                        <div>
+                          <div style={{background:"rgba(0,0,0,.3)",borderRadius:10,padding:"7px 9px",fontFamily:"monospace",fontSize:20,fontWeight:700,minWidth:44,textAlign:"center",border:`1px solid ${accent}33`}}>{String(v).padStart(2,"0")}</div>
+                          <div style={{fontSize:7,color:"rgba(255,255,255,.4)",textAlign:"center",marginTop:2,textTransform:"uppercase",letterSpacing:".08em"}}>{["dias","hrs","min"][i]}</div>
+                        </div>
+                        {i<2&&<div style={{color:accent,fontSize:16,fontWeight:900,marginBottom:10}}>:</div>}
+                      </React.Fragment>
+                    ))}
+                  </div>
+                  {!lt.ok&&<div style={{fontSize:9,color:"rgba(255,255,255,.35)",marginTop:5}}>defina a data no builder</div>}
+                </div>
+              )}
+              {config.widgets.gallery&&(
+                <div style={{marginBottom:12}}>
+                  {config.galleryStyle==="carousel"&&<Carousel photos={config.photos} accent={accent}/>}
+                  {config.galleryStyle==="polaroid"&&(
+                    <div style={{display:"flex",flexDirection:"column",gap:14,paddingBlock:4}}>
+                      {config.photos.length?config.photos.slice(0,4).map((p,i)=>(
+                        <div key={p.id} style={{width:210,background:"#fff",borderRadius:14,overflow:"hidden",boxShadow:"0 14px 35px rgba(0,0,0,.4)",transform:`rotate(${["-2deg","2deg","-1deg","1.5deg"][i]})`,margin:"0 auto"}}>
+                          <img src={p.url} style={{width:"100%",aspectRatio:"1",objectFit:"cover"}}/>
+                          <div style={{padding:"8px 10px"}}>
+                            <div style={{fontWeight:900,fontSize:11,color:"#0f172a"}}>Momento ✨</div>
+                            {p.date&&<div style={{fontSize:9,color:"#64748b"}}>{new Date(p.date+"T00:00:00").toLocaleDateString("pt-BR")}</div>}
+                          </div>
+                        </div>
+                      )):(
+                        <div style={{height:100,background:"rgba(255,255,255,.03)",border:"1px dashed rgba(255,255,255,.12)",borderRadius:18,display:"flex",alignItems:"center",justifyContent:"center",flexDirection:"column",gap:6,opacity:.5}}>
+                          <span style={{fontSize:24}}>📸</span>
+                          <div style={{fontSize:10,fontWeight:700}}>Adicione fotos</div>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                  {config.galleryStyle==="bento"&&(
+                    <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:7}}>
+                      {config.photos.length?config.photos.slice(0,6).map((p,i)=>(
+                        <div key={p.id} style={{gridColumn:i===0?"1/-1":"auto",borderRadius:16,overflow:"hidden",height:i===0?140:90,border:"1px solid rgba(255,255,255,.07)"}}>
+                          <img src={p.url} style={{width:"100%",height:"100%",objectFit:"cover",display:"block"}}/>
+                        </div>
+                      )):(
+                        <div style={{gridColumn:"1/-1",height:140,background:"rgba(255,255,255,.03)",border:"1px dashed rgba(255,255,255,.12)",borderRadius:16,display:"flex",alignItems:"center",justifyContent:"center",opacity:.4,fontSize:28}}>🖼️</div>
+                      )}
+                    </div>
+                  )}
+                </div>
+              )}
+              <div style={{background:"rgba(255,255,255,.04)",border:"1px solid rgba(255,255,255,.08)",borderRadius:20,padding:"12px 14px",marginBottom:12}}>
+                <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:music?10:0}}>
+                  <div style={{width:36,height:36,borderRadius:12,background:`${accent}22`,border:`1px solid ${accent}33`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:16}}>🎵</div>
+                  <div style={{flex:1,minWidth:0}}>
+                    <div style={{fontSize:8,letterSpacing:".2em",textTransform:"uppercase",color:"rgba(255,255,255,.4)",fontWeight:800}}>Nossa música</div>
+                    <div style={{fontSize:12,fontWeight:800,marginTop:1,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{music?"Tocando agora…":"Cole um link no builder"}</div>
+                  </div>
+                  {music&&<div style={{flexShrink:0,background:`${accent}22`,color:accent,border:`1px solid ${accent}33`,borderRadius:999,padding:"3px 10px",fontSize:8,fontWeight:900,textTransform:"uppercase",letterSpacing:".12em"}}>{music.kind}</div>}
+                </div>
+                {music&&(<div style={{borderRadius:12,overflow:"hidden"}}><iframe src={music.src} width="100%" height={music.kind==="spotify"?"80":"110"} frameBorder="0" allow="autoplay;clipboard-write;encrypted-media;fullscreen;picture-in-picture" loading="lazy"/></div>)}
+              </div>
+              <div style={{background:"rgba(255,255,255,.04)",border:"1px solid rgba(255,255,255,.08)",borderRadius:20,padding:"14px 16px",marginBottom:12}}>
+                <div style={{fontSize:8,letterSpacing:".22em",textTransform:"uppercase",color:"rgba(255,255,255,.4)",fontWeight:800,marginBottom:7}}>Declaração</div>
+                <p style={{fontSize:12,fontStyle:"italic",lineHeight:1.6,color:"rgba(255,255,255,.88)"}}>"{config.message||"Escreva sua mensagem no builder…"}"</p>
+              </div>
+              {config.widgets.scratch&&<Scratch message={config.secretMessage} accent={accent}/>}
+              <div style={{textAlign:"center",marginTop:20,opacity:.22,fontSize:9,fontWeight:900,letterSpacing:".2em",textTransform:"uppercase"}}>criado com lovebuilder ✦</div>
+            </div>
+          </div>
+          {config.envelope.on&&!opened&&(
+            <div style={{position:"absolute",inset:0,zIndex:80,background:"rgba(5,5,15,.82)",backdropFilter:"blur(12px)",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",gap:18,padding:28}}>
+              <div onClick={()=>{ setOpened(true); try{confetti({particleCount:100,spread:65,origin:{y:.7}});}catch(e){} }} style={{width:170,height:110,background:`${accent}18`,border:`1px solid ${accent}44`,borderRadius:20,position:"relative",overflow:"hidden",cursor:"pointer"}}>
+                <div style={{position:"absolute",top:0,left:0,right:0,height:52,background:`${accent}10`,borderBottom:`1px solid ${accent}22`}}/>
+                <div style={{position:"absolute",inset:0,display:"flex",alignItems:"center",justifyContent:"center"}}>
+                  <div style={{width:50,height:50,borderRadius:"50%",background:accent,display:"flex",alignItems:"center",justifyContent:"center",fontSize:22,boxShadow:`0 0 28px ${accent}66`}}>{config.envelope.icon}</div>
+                </div>
+              </div>
+              <div>
+                <div style={{textAlign:"center",fontFamily:"Fraunces,serif",fontSize:19,fontWeight:800,marginBottom:4}}>{config.envelope.title}</div>
+                <div style={{textAlign:"center",fontSize:11,color:"rgba(255,255,255,.45)"}}>{config.envelope.subtitle}</div>
+              </div>
+              <div onClick={()=>{ setOpened(true); try{confetti({particleCount:100,spread:65,origin:{y:.7}});}catch(e){} }} style={{background:accent,color:"#fff",borderRadius:12,padding:"9px 22px",fontSize:12,fontWeight:800,cursor:"pointer"}}>Abrir presente →</div>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+};
+
+/* ── PUBLIC PAGE — full-page responsivo, sem mockup ── */
+/* Componente de partículas — definido FORA de CardPage para evitar remount a cada render */
+const ParticleBg=({particles})=>(
+  <div style={{position:"fixed",inset:0,pointerEvents:"none",zIndex:0,overflow:"hidden"}}>
+    {particles.map(p=>(
+      <div key={p.id} className="part" style={{left:`${p.left}%`,top:0,fontSize:p.size,animationDuration:`${p.dur}s`}}>{p.emoji}</div>
+    ))}
+  </div>
+);
+
+const CardPage=({cfg,th,ac,particles})=>{
+  const lt=useMemo(()=>calcTime(cfg.startDate),[cfg.startDate]);
+  const music=useMemo(()=>parseMusic(cfg.musicUrl),[cfg.musicUrl]);
+  const [opened,setOpened]=useState(false);
+  useEffect(()=>setOpened(!cfg.envelope.on),[cfg.envelope.on]);
+  const tagline=cfg.customTagline||th.dt;
+
+  /* envelope overlay full-screen */
+  if(cfg.envelope.on && !opened){
+    return(
+      <div style={{minHeight:"100vh",background:th.bg,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",gap:28,padding:32,position:"relative",overflow:"hidden"}}>
+        {cfg.rain.on && <ParticleBg particles={particles}/>}
+        <div style={{position:"absolute",top:-100,left:-100,width:400,height:400,background:ac,borderRadius:"50%",filter:"blur(130px)",opacity:.12,pointerEvents:"none"}}/>
+        <div style={{position:"absolute",bottom:-80,right:-80,width:300,height:300,background:ac,borderRadius:"50%",filter:"blur(100px)",opacity:.08,pointerEvents:"none"}}/>
+        <div style={{zIndex:1,textAlign:"center"}}>
+          <div style={{display:"inline-flex",alignItems:"center",gap:8,background:`${ac}22`,border:`1px solid ${ac}44`,borderRadius:999,padding:"5px 16px",fontSize:10,fontWeight:900,letterSpacing:".18em",textTransform:"uppercase",color:ac,marginBottom:24}}>
+            <span style={{fontSize:14}}>{th.icon}</span>{tagline}
+          </div>
+          <div
+            onClick={()=>{ setOpened(true); try{confetti({particleCount:140,spread:80,origin:{y:.6}});}catch(e){} }}
+            style={{width:180,height:120,background:`${ac}18`,border:`1px solid ${ac}44`,borderRadius:28,position:"relative",overflow:"hidden",cursor:"pointer",margin:"0 auto 28px",transition:"transform .2s"}}
+            onMouseEnter={e=>e.currentTarget.style.transform="scale(1.06)"}
+            onMouseLeave={e=>e.currentTarget.style.transform="scale(1)"}
+          >
+            <div style={{position:"absolute",top:0,left:0,right:0,height:56,background:`${ac}12`,borderBottom:`1px solid ${ac}22`}}/>
+            <div style={{position:"absolute",inset:0,display:"flex",alignItems:"center",justifyContent:"center"}}>
+              <div style={{width:60,height:60,borderRadius:"50%",background:ac,display:"flex",alignItems:"center",justifyContent:"center",fontSize:28,boxShadow:`0 0 40px ${ac}88`}}>{cfg.envelope.icon}</div>
+            </div>
+          </div>
+          <div style={{fontFamily:"Fraunces,serif",fontSize:28,fontWeight:900,marginBottom:8,lineHeight:1.1}}>{cfg.envelope.title}</div>
+          <div style={{fontSize:14,color:"rgba(255,255,255,.5)",marginBottom:32}}>{cfg.envelope.subtitle}</div>
+          <button
+            onClick={()=>{ setOpened(true); try{confetti({particleCount:140,spread:80,origin:{y:.6}});}catch(e){} }}
+            style={{background:ac,color:"#fff",borderRadius:16,padding:"14px 36px",fontSize:15,fontWeight:900,border:"none",cursor:"pointer",boxShadow:`0 8px 32px ${ac}55`,transition:"transform .15s"}}
+            onMouseEnter={e=>e.currentTarget.style.transform="scale(1.04)"}
+            onMouseLeave={e=>e.currentTarget.style.transform="scale(1)"}
+          >
+            Abrir presente ✦
+          </button>
+        </div>
+        <div style={{position:"absolute",bottom:20,fontSize:10,fontWeight:900,letterSpacing:".2em",textTransform:"uppercase",opacity:.2,zIndex:1}}>criado com lovebuilder</div>
+      </div>
+    );
+  }
+
+  /* card aberto — full page */
+  return(
+    <div style={{minHeight:"100vh",background:th.bg,position:"relative",overflowX:"hidden"}}>
+      {cfg.rain.on && <ParticleBg particles={particles}/>}
+      {/* blobs de luz */}
+      <div style={{position:"fixed",top:-120,left:-120,width:500,height:500,background:ac,borderRadius:"50%",filter:"blur(160px)",opacity:.10,pointerEvents:"none",zIndex:0}}/>
+      <div style={{position:"fixed",bottom:-100,right:-100,width:380,height:380,background:ac,borderRadius:"50%",filter:"blur(130px)",opacity:.07,pointerEvents:"none",zIndex:0}}/>
+
+      <div style={{position:"relative",zIndex:1,maxWidth:680,margin:"0 auto",padding:"32px 20px 80px"}}>
+
+        {/* header */}
+        <div style={{textAlign:"center",marginBottom:36}}>
+          <div style={{display:"inline-flex",alignItems:"center",gap:8,background:`${ac}22`,border:`1px solid ${ac}44`,borderRadius:999,padding:"5px 18px",fontSize:10,fontWeight:900,letterSpacing:".18em",textTransform:"uppercase",color:ac,marginBottom:20}}>
+            <span style={{fontSize:14}}>{th.icon}</span>{tagline}
+          </div>
+          <h1 style={{fontFamily:"Fraunces,serif",fontSize:"clamp(32px,8vw,56px)",fontWeight:900,lineHeight:1.05,marginBottom:8}}>
+            Para {cfg.receiver||"o meu amor"}
+          </h1>
+          <p style={{fontSize:14,color:"rgba(255,255,255,.45)",fontWeight:500}}>
+            com carinho de <strong style={{color:"rgba(255,255,255,.75)"}}>{cfg.sender||"alguém especial"}</strong>
+          </p>
+        </div>
+
+        {/* contador */}
+        {cfg.widgets.counter&&(
+          <div style={{background:"rgba(255,255,255,.04)",border:"1px solid rgba(255,255,255,.08)",borderRadius:24,padding:"24px",textAlign:"center",marginBottom:24}}>
+            <div style={{fontSize:9,letterSpacing:".22em",textTransform:"uppercase",color:"rgba(255,255,255,.4)",fontWeight:800,marginBottom:14}}>juntos há</div>
+            <div style={{display:"flex",alignItems:"center",justifyContent:"center",gap:12}}>
+              {[lt.d,lt.h,lt.m].map((v,i)=>(
+                <React.Fragment key={i}>
+                  <div>
+                    <div style={{background:"rgba(0,0,0,.3)",borderRadius:14,padding:"12px 16px",fontFamily:"monospace",fontSize:"clamp(28px,7vw,44px)",fontWeight:700,minWidth:72,textAlign:"center",border:`1px solid ${ac}33`}}>
+                      {String(v).padStart(2,"0")}
+                    </div>
+                    <div style={{fontSize:10,color:"rgba(255,255,255,.4)",textAlign:"center",marginTop:5,textTransform:"uppercase",letterSpacing:".1em"}}>{["dias","hrs","min"][i]}</div>
+                  </div>
+                  {i<2&&<div style={{color:ac,fontSize:28,fontWeight:900,marginBottom:14}}>:</div>}
+                </React.Fragment>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* galeria */}
+        {cfg.widgets.gallery&&cfg.photos.length>0&&(()=>{
+          if(cfg.galleryStyle==="carousel") return(
+            <div style={{marginBottom:24}}>
+              <Carousel photos={cfg.photos} accent={ac}/>
+            </div>
+          );
+          if(cfg.galleryStyle==="polaroid") return(
+            <div style={{display:"flex",flexDirection:"column",gap:20,marginBottom:24,alignItems:"center"}}>
+              {cfg.photos.map((p,i)=>(
+                <div key={p.id} style={{width:"min(320px,90%)",background:"#fff",borderRadius:16,overflow:"hidden",boxShadow:"0 20px 50px rgba(0,0,0,.45)",transform:`rotate(${["-1.5deg","1.5deg","-1deg","1deg"][i%4]})`}}>
+                  <img src={p.url} style={{width:"100%",aspectRatio:"1",objectFit:"cover",display:"block"}}/>
+                  <div style={{padding:"12px 14px"}}>
+                    <div style={{fontWeight:900,fontSize:13,color:"#0f172a"}}>Momento ✨</div>
+                    {p.date&&<div style={{fontSize:11,color:"#64748b",marginTop:2}}>{new Date(p.date+"T00:00:00").toLocaleDateString("pt-BR")}</div>}
+                  </div>
+                </div>
+              ))}
+            </div>
+          );
+          /* bento */
+          return(
+            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10,marginBottom:24}}>
+              {cfg.photos.map((p,i)=>(
+                <div key={p.id} style={{gridColumn:i===0?"1/-1":"auto",borderRadius:20,overflow:"hidden",height:i===0?240:150,border:"1px solid rgba(255,255,255,.07)"}}>
+                  <img src={p.url} style={{width:"100%",height:"100%",objectFit:"cover",display:"block"}}/>
+                </div>
+              ))}
+            </div>
+          );
+        })()}
+
+        {/* música */}
+        {music&&(
+          <div style={{background:"rgba(255,255,255,.04)",border:"1px solid rgba(255,255,255,.08)",borderRadius:24,padding:"20px",marginBottom:24}}>
+            <div style={{display:"flex",alignItems:"center",gap:12,marginBottom:14}}>
+              <div style={{width:44,height:44,borderRadius:14,background:`${ac}22`,border:`1px solid ${ac}33`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:20}}>🎵</div>
+              <div>
+                <div style={{fontSize:9,letterSpacing:".2em",textTransform:"uppercase",color:"rgba(255,255,255,.4)",fontWeight:800}}>Nossa música</div>
+                <div style={{fontSize:13,fontWeight:800,marginTop:2}}>Tocando agora…</div>
+              </div>
+              <div style={{marginLeft:"auto",background:`${ac}22`,color:ac,border:`1px solid ${ac}33`,borderRadius:999,padding:"4px 12px",fontSize:9,fontWeight:900,textTransform:"uppercase",letterSpacing:".12em"}}>{music.kind}</div>
+            </div>
+            <div style={{borderRadius:14,overflow:"hidden"}}>
+              <iframe src={music.src} width="100%" height={music.kind==="spotify"?"152":"200"} frameBorder="0" allow="autoplay;clipboard-write;encrypted-media;fullscreen;picture-in-picture" loading="lazy"/>
+            </div>
+          </div>
+        )}
+
+        {/* declaração */}
+        {cfg.message&&(
+          <div style={{background:"rgba(255,255,255,.04)",border:"1px solid rgba(255,255,255,.08)",borderRadius:24,padding:"24px 28px",marginBottom:24}}>
+            <div style={{fontSize:9,letterSpacing:".22em",textTransform:"uppercase",color:"rgba(255,255,255,.4)",fontWeight:800,marginBottom:12}}>Declaração</div>
+            <p style={{fontSize:"clamp(14px,3.5vw,18px)",fontStyle:"italic",lineHeight:1.7,color:"rgba(255,255,255,.9)"}}>"{cfg.message}"</p>
+          </div>
+        )}
+
+        {/* raspadinha */}
+        {cfg.widgets.scratch&&cfg.secretMessage&&(
+          <div style={{marginBottom:24}}>
+            <Scratch message={cfg.secretMessage} accent={ac}/>
+          </div>
+        )}
+
+        {/* rodapé */}
+        <div style={{textAlign:"center",marginTop:40,opacity:.2,fontSize:10,fontWeight:900,letterSpacing:".2em",textTransform:"uppercase"}}>criado com lovebuilder ✦</div>
+      </div>
+    </div>
+  );
+};
+
+const PublicPage=({slug})=>{
+  const [cfg,setCfg]=useState(null);
+  const [loading,setLoading]=useState(true);
+  const [particles,setParticles]=useState([]);
+  useEffect(()=>{
+    let mounted=true;
+    async function load(){
+      setLoading(true);
+      if(!sb){ setCfg({_sb:false}); setLoading(false); return; }
+      const {data,error}=await sb.from("cards").select("config,published").eq("slug",slug).single();
+      if(!mounted) return;
+      if(error||!data?.config){ setCfg({_notfound:true}); setLoading(false); return; }
+      if(!data.published){ setCfg({_notpublished:true}); setLoading(false); return; }
+      setCfg(normalize(data.config));
+      setLoading(false);
+    }
+    load();
+    return()=>{ mounted=false; };
+  },[slug]);
+  useEffect(()=>{
+    if(!cfg||cfg._notfound||cfg._notpublished) return;
+    if(!cfg.rain?.on) return;
+    const speeds=[4,2.5,2][(cfg.rain.speed||2)-1]||2.5;
+    const gap=[1200,800,500][(cfg.rain.density||2)-1]||800;
+    const iv=setInterval(()=>{
+      const id=Date.now()+Math.random();
+      setParticles(p=>[...p,{id,left:Math.random()*100,dur:speeds+Math.random()*2,size:11+Math.random()*12,emoji:cfg.rain.emoji||"❤️"}]);
+      setTimeout(()=>setParticles(p=>p.filter(x=>x.id!==id)),7000);
+    },gap);
+    return()=>clearInterval(iv);
+  },[cfg?.rain?.on,cfg?.rain?.emoji,cfg?.rain?.speed,cfg?.rain?.density]);
+
+  if(loading) return <div style={{minHeight:"100vh",display:"flex",alignItems:"center",justifyContent:"center",padding:24,color:"rgba(255,255,255,.7)"}}>Carregando cartão…</div>;
+  if(!cfg) return null;
+  if(cfg._sb) return <div style={{minHeight:"100vh",display:"flex",alignItems:"center",justifyContent:"center",padding:24,color:"rgba(255,255,255,.7)"}}>Supabase não configurado.</div>;
+  if(cfg._notfound) return <div style={{minHeight:"100vh",display:"flex",alignItems:"center",justifyContent:"center",padding:24,color:"rgba(255,255,255,.7)"}}>Cartão não encontrado.</div>;
+  if(cfg._notpublished) return <div style={{minHeight:"100vh",display:"flex",alignItems:"center",justifyContent:"center",padding:24,color:"rgba(255,255,255,.7)"}}>Esse link ainda não foi publicado.</div>;
+  const th=THEMES[cfg.themeId]||THEMES.classic;
+  const ac=cfg.customAccent||th.accent;
+  const tpl=TEMPLATES[cfg.templateId]||TEMPLATES.classic;
+
+  if(tpl.external){
+    // Template externo: fullscreen iframe que recebe config via postMessage
+    return <ExternalTemplatePage cfg={cfg} tpl={tpl}/>;
+  }
+  return <CardPage cfg={cfg} th={th} ac={ac} particles={particles}/>;
+};
+
+/* ── ✅ SUCCESS PAGE — lê session_id da URL e finaliza ── */
+const SuccessPage=({slug})=>{
+  const [status,setStatus]=useState("Finalizando publicação…");
+  const [ready,setReady]=useState(false);
+  const [error,setError]=useState("");
+
+  useEffect(()=>{
+    let mounted=true;
+    async function run(){
+      try{
+        const params=new URLSearchParams(window.location.search);
+        // ✅ session_id vem da success_url que montamos no create-checkout
+        const session_id=params.get("session_id");
+        if(!session_id) throw new Error("Parâmetro session_id ausente na URL. Verifique a configuração da success_url.");
+
+        const cfg=normalize(JSON.parse(localStorage.getItem("lb_v7")||"{}"));
+        if(!cfg.slug) cfg.slug=slug;
+
+        const photos=(cfg.photos||[]).slice(0,9).map(p=>({
+          name:p.name||"photo.jpg",
+          contentType:p.type||"image/jpeg",
+          base64:p.base64||"",
+          photo_date:p.date||null
+        }));
+
+        setStatus("Confirmando pagamento e publicando…");
+
+        // Pega sessão ativa (se o usuário estiver logado, manda o JWT dele)
+        let authHeader = `Bearer ${SUPABASE_ANON_KEY}`;
+        try{
+          const {data:sessionData}=await sb.auth.getSession();
+          if(sessionData?.session?.access_token) authHeader=`Bearer ${sessionData.session.access_token}`;
+        }catch(e){}
+
+        const res=await fetch(`${FUNCTIONS_BASE}/finalize-card`,{
+          method:"POST",
+          headers:{
+            "content-type":"application/json",
+            "apikey":SUPABASE_ANON_KEY,
+            "authorization":authHeader,
+          },
+          body:JSON.stringify({session_id,slug:safeSlug(slug),config:cfg,photos,contact:cfg.contact||{}}),
+        });
+
+        const data=await res.json().catch(()=>({}));
+        if(!res.ok) throw new Error(data?.error||"Falha ao finalizar.");
+
+        // Limpa base64 do localStorage
+        try{
+          const cleaned=normalize(cfg);
+          cleaned.photos=(cleaned.photos||[]).map(p=>({...p,base64:"",_local:false}));
+          localStorage.setItem("lb_v7",JSON.stringify(cleaned));
+        }catch(e){}
+
+        if(!mounted) return;
+        setReady(true);
+        setStatus("Publicado com sucesso! ✅");
+        try{confetti({particleCount:120,spread:70,origin:{y:.6}});}catch(e){}
+      }catch(e){
+        console.error(e);
+        if(!mounted) return;
+        setError(e.message||"Erro ao finalizar");
+        setStatus("Erro ao publicar");
+      }
+    }
+    run();
+    return()=>{ mounted=false; };
+  },[slug]);
+
+  return(
+    <div style={{minHeight:"100vh",display:"flex",alignItems:"center",justifyContent:"center",padding:24}}>
+      <div style={{maxWidth:460,width:"100%",background:"rgba(255,255,255,.04)",border:"1px solid rgba(255,255,255,.09)",borderRadius:18,padding:18}}>
+        <div style={{fontFamily:"Fraunces,serif",fontWeight:900,fontSize:22,marginBottom:6}}>{ready?"🎉 Tudo certo!":"⏳ Aguarde…"}</div>
+        <div style={{color:error?"#f87171":"rgba(255,255,255,.65)",fontSize:13,marginBottom:14}}>{status}</div>
+        {error&&(
+          <div style={{background:"rgba(248,113,113,.1)",border:"1px solid rgba(248,113,113,.3)",borderRadius:12,padding:"10px 12px",fontSize:11,color:"#fca5a5",marginBottom:12}}>
+            <strong>Detalhe:</strong> {error}
+          </div>
+        )}
+        <div style={{background:"rgba(255,255,255,.04)",border:"1px solid rgba(255,255,255,.09)",borderRadius:14,padding:"12px 14px",marginBottom:12}}>
+          <div className="sec">Seu link público</div>
+          <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",gap:10}}>
+            <div style={{fontFamily:"Space Mono,monospace",fontSize:11,fontWeight:800,wordBreak:"break-all"}}>{shareUrlFromSlug(slug)}</div>
+            <button onClick={()=>navigator.clipboard?.writeText(shareUrlFromSlug(slug))} style={{flexShrink:0,padding:"7px 12px",background:"rgba(255,255,255,.1)",border:"1px solid rgba(255,255,255,.14)",borderRadius:10,color:"#fff",fontSize:11,fontWeight:800,cursor:"pointer"}}>Copiar</button>
+          </div>
+        </div>
+        <div style={{display:"flex",gap:10}}>
+          <a href={shareUrlFromSlug(slug)} style={{flex:1,textAlign:"center",padding:"12px 14px",borderRadius:12,background:ready?"#fff":"rgba(255,255,255,.09)",color:ready?"#07070f":"rgba(255,255,255,.6)",fontWeight:900,textDecoration:"none",pointerEvents:ready?"auto":"none"}}>Abrir cartão</a>
+          <a href={APP_URL} style={{flex:1,textAlign:"center",padding:"12px 14px",borderRadius:12,background:"rgba(255,255,255,.06)",border:"1px solid rgba(255,255,255,.09)",color:"#fff",fontWeight:900,textDecoration:"none"}}>Criar outro</a>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+
+/* ── SLUG FIELD — validação de unicidade + sufixo auto ── */
+const SlugField=({config,set,accent})=>{
+  const [base,setBase]=useState(()=>config.slug?slugBase(config.slug):"");
+  const [status,setStatus]=useState("idle"); // idle | checking | ok | taken | empty
+  const [suggestion,setSuggestion]=useState("");
+  const debounceRef=useRef(null);
+
+  // Inicializa base quando config.slug é preenchido externamente (ex: editar cartão)
+  useEffect(()=>{
+    if(config.slug && !base) setBase(slugBase(config.slug));
+  },[config.slug]);
+
+  // Quando base muda: gera slug com sufixo e valida
+  const validate=useCallback(async(rawBase)=>{
+    const b=safeSlug(rawBase);
+    if(!b){ setStatus("empty"); set("slug",""); return; }
+    setStatus("checking");
+    // Sempre gera com sufixo — nunca usa base pura
+    let found=null;
+    for(let i=0;i<10;i++){
+      const candidate=slugWithSuffix(b,randSuffix());
+      if(await checkSlugAvailable(candidate)){ found=candidate; break; }
+    }
+    if(found){ set("slug",found); setStatus("ok"); }
+    else { setStatus("taken"); }
+  },[set]);
+
+  // Gera slug inicial ao montar se vazio
+  useEffect(()=>{
+    if(!config.slug){
+      const b="cartao";
+      setBase(b);
+      validate(b);
+    }
+  },[]);
+
+  const handleChange=useCallback((e)=>{
+    const raw=e.target.value;
+    setBase(raw);
+    setStatus("checking");
+    clearTimeout(debounceRef.current);
+    debounceRef.current=setTimeout(()=>validate(raw),600);
+  },[validate]);
+
+  const handleRegen=useCallback(()=>{
+    if(!base) return;
+    setStatus("checking");
+    validate(base);
+  },[base,validate]);
+
+  const statusColor = status==="ok"?"#4ade80":status==="taken"||status==="empty"?"#f87171":"rgba(255,255,255,.3)";
+  const statusIcon  = status==="ok"?"✓":status==="checking"?"…":status==="taken"?"✗":status==="empty"?"—":"";
+
+  return(
+    <div>
+      <span className="sec">URL do link</span>
+      <div style={{display:"flex",background:"rgba(255,255,255,.05)",border:`1px solid ${status==="ok"?"rgba(74,222,128,.35)":status==="taken"?"rgba(248,113,113,.35)":"rgba(255,255,255,.09)"}`,borderRadius:11,overflow:"hidden",transition:"border-color .2s"}}>
+        <span style={{padding:"10px 9px",fontSize:11,color:"rgba(255,255,255,.25)",borderRight:"1px solid rgba(255,255,255,.07)",whiteSpace:"nowrap",display:"flex",alignItems:"center"}}>?c=</span>
+        <input className="inp" style={{borderRadius:0,border:"none",background:"transparent",flex:1,fontFamily:"Space Mono,monospace",fontSize:11}}
+          placeholder="nome-do-cartao"
+          value={base}
+          onChange={handleChange}/>
+        <button onClick={handleRegen} title="Gerar novo link"
+          style={{padding:"0 11px",background:"rgba(255,255,255,.05)",border:"none",borderLeft:"1px solid rgba(255,255,255,.07)",color:"rgba(255,255,255,.4)",cursor:"pointer",fontSize:14,transition:"color .15s"}}
+          onMouseEnter={e=>e.currentTarget.style.color="#fff"}
+          onMouseLeave={e=>e.currentTarget.style.color="rgba(255,255,255,.4)"}>
+          ↻
+        </button>
+      </div>
+      {/* status badge */}
+      <div style={{display:"flex",alignItems:"center",gap:6,marginTop:6}}>
+        <div style={{display:"flex",alignItems:"center",gap:5,padding:"3px 9px",borderRadius:99,background:status==="ok"?"rgba(74,222,128,.12)":status==="taken"?"rgba(248,113,113,.12)":status==="checking"?"rgba(255,255,255,.06)":"rgba(255,255,255,.04)",border:`1px solid ${status==="ok"?"rgba(74,222,128,.3)":status==="taken"?"rgba(248,113,113,.3)":"rgba(255,255,255,.08)"}`,transition:"all .2s"}}>
+          <span style={{fontSize:11,color:statusColor}}>{statusIcon}</span>
+          <span style={{fontSize:10,fontWeight:800,color:statusColor,letterSpacing:".06em"}}>
+            {status==="ok"?"disponível":status==="taken"?"indisponível":status==="checking"?"verificando…":status==="empty"?"defina um nome":""}
+          </span>
+        </div>
+        {status==="ok"&&config.slug&&(
+          <span style={{fontSize:10,fontFamily:"Space Mono,monospace",color:"rgba(255,255,255,.3)",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",flex:1}}>
+            ?c={config.slug}
+          </span>
+        )}
+      </div>
+      {status==="taken"&&(
+        <div style={{marginTop:6,fontSize:11,color:"#f87171",background:"rgba(248,113,113,.08)",borderRadius:8,padding:"6px 10px"}}>
+          Não foi possível encontrar uma URL disponível. Tente um nome diferente.
+        </div>
+      )}
+    </div>
+  );
+};
+
+
+
+/* ── VideoUrlField — input com validação ao vivo ── */
+const VideoUrlField=({value,onChange})=>{
+  const [vStatus,setVStatus]=useState("idle"); // idle|checking|ok|error
+  const [vMsg,setVMsg]=useState("");
+  const debRef=useRef(null);
+
+  const validate=useCallback(async(url)=>{
+    if(!url){ setVStatus("idle"); setVMsg(""); return; }
+    setVStatus("checking");
+    const res=await validateVideoUrl(url);
+    setVStatus(res.ok?"ok":"error");
+    setVMsg(res.ok?"":"⚠️ "+res.msg);
+  },[]);
+
+  const handleChange=e=>{
+    const v=e.target.value.trim();
+    onChange(v);
+    clearTimeout(debRef.current);
+    debRef.current=setTimeout(()=>validate(v),700);
+  };
+
+  const borderColor=vStatus==="ok"?"rgba(74,222,128,.4)":vStatus==="error"?"rgba(248,113,113,.4)":"rgba(255,255,255,.09)";
+
+  return(
+    <div>
+      <input className="inp"
+        placeholder="URL do vídeo (.mp4/.webm) ou deixe em branco"
+        value={value}
+        onChange={handleChange}
+        style={{border:`1px solid ${borderColor}`,transition:"border-color .2s"}}/>
+      {vStatus==="checking"&&<p style={{fontSize:10,color:"rgba(255,255,255,.35)",marginTop:4}}>Verificando…</p>}
+      {vStatus==="ok"&&<p style={{fontSize:10,color:"#4ade80",marginTop:4}}>✓ URL válida</p>}
+      {vStatus==="error"&&<p style={{fontSize:10,color:"#f87171",marginTop:4}}>{vMsg}</p>}
+    </div>
+  );
+};
+
+/* ════════════════════════════════════════════════════
+   TEMPLATE PREVIEW — iframe para templates externos,
+   Phone interno para o clássico
+════════════════════════════════════════════════════ */
+const TemplatePreview=({config,theme,accent,particles})=>{
+  const tpl = TEMPLATES[config.templateId] || TEMPLATES.classic;
+
+  if(!tpl.external){
+    // Template clássico: usa o Phone existente
+    return <Phone config={config} theme={theme} accent={accent} particles={particles}/>;
+  }
+
+  // Template externo: iframe com postMessage para passar a config
+  const iframeRef = useRef(null);
+  const [loaded, setLoaded] = useState(false);
+  const [error, setError]   = useState(false);
+
+  // Envia config ao iframe sempre que mudar
+  useEffect(()=>{
+    if(!loaded || !iframeRef.current) return;
+    try{
+      iframeRef.current.contentWindow.postMessage(
+        { type:"LB_CONFIG", config },
+        window.location.origin
+      );
+    }catch(e){}
+  },[loaded, config]);
+
+  return(
+    <div className="phone-wrap" style={{position:"relative"}}>
+      {!loaded && !error && (
+        <div style={{width:320,height:568,borderRadius:36,background:"rgba(255,255,255,.04)",border:"1px solid rgba(255,255,255,.1)",display:"flex",alignItems:"center",justifyContent:"center",flexDirection:"column",gap:12}}>
+          <div style={{fontSize:28}}>{tpl.icon}</div>
+          <div style={{fontSize:12,color:"rgba(255,255,255,.4)"}}>Carregando template…</div>
+        </div>
+      )}
+      {error && (
+        <div style={{width:320,height:568,borderRadius:36,background:"rgba(255,255,255,.04)",border:"1px solid rgba(255,255,255,.1)",display:"flex",alignItems:"center",justifyContent:"center",flexDirection:"column",gap:12,padding:24,textAlign:"center"}}>
+          <div style={{fontSize:28}}>⚠️</div>
+          <div style={{fontSize:12,color:"rgba(255,255,255,.5)",lineHeight:1.5}}>
+            Template não encontrado.<br/>
+            <span style={{fontSize:10,opacity:.6}}>Crie o arquivo em<br/>/templates/netflix.html</span>
+          </div>
+        </div>
+      )}
+      <iframe
+        ref={iframeRef}
+        src={tpl.file}
+        onLoad={()=>setLoaded(true)}
+        onError={()=>setError(true)}
+        style={{
+          width:320, height:568,
+          border:"none", borderRadius:36,
+          display: loaded && !error ? "block" : "none",
+          background:"#000",
+        }}
+        title={`Preview — ${tpl.label}`}
+        sandbox="allow-scripts allow-same-origin"
+      />
+    </div>
+  );
+};
+
+/* ── APP (BUILDER) ── */
+const App=()=>{
+  const {user,loading:authLoading}=useAuth();
+  const [showLogin,setShowLogin]=useState(false);
+  const [showMyCards,setShowMyCards]=useState(false);
+  const [step,setStep]=useState(1);
+  const [mv,setMv]=useState("builder");
+  const [particles,setParticles]=useState([]);
+  const [eset,setEset]=useState("love");
+  const [envPage,setEnvPage]=useState(0);
+  const [statusMsg,setStatusMsg]=useState("");
+  const IPP=10;
+
+  const params=new URLSearchParams(window.location.search);
+  const slugPublic=params.get("c");
+  const isSuccess=params.get("success")==="1";
+  const isCancel=params.get("cancel")==="1";
+  const slugAny=safeSlug(params.get("slug")||slugPublic||"");
+
+  const isEditSuccess = params.get("edit_success")==="1";
+  const isEditCancel  = params.get("edit_cancel")==="1";
+
+  if(slugPublic&&slugAny) return <PublicPage slug={slugAny}/>;
+  if(isSuccess&&slugAny) return <SuccessPage slug={slugAny}/>;
+  if(isEditSuccess&&slugAny) return <EditSuccessPage slug={slugAny}/>;
+  if(isEditCancel&&slugAny) return <EditCancelPage slug={slugAny}/>;
+  if(isCancel) return(
+    <div style={{minHeight:"100vh",display:"flex",alignItems:"center",justifyContent:"center",padding:24}}>
+      <div style={{maxWidth:460,width:"100%",background:"rgba(255,255,255,.04)",border:"1px solid rgba(255,255,255,.09)",borderRadius:18,padding:18}}>
+        <div style={{fontFamily:"Fraunces,serif",fontWeight:900,fontSize:22,marginBottom:6}}>Pagamento cancelado</div>
+        <div style={{color:"rgba(255,255,255,.65)",fontSize:13,marginBottom:14}}>Nenhuma cobrança foi feita. Você pode tentar novamente.</div>
+        <a href={APP_URL} style={{display:"block",textAlign:"center",padding:"12px 14px",borderRadius:12,background:"#fff",color:"#07070f",fontWeight:900,textDecoration:"none"}}>Voltar ao Builder</a>
+      </div>
+    </div>
+  );
+
+  const [config,setConfig]=useState(()=>{
+    try{ return normalize(JSON.parse(localStorage.getItem("lb_v7")||"")); }
+    catch(e){ return normalize(null); }
+  });
+  const configRef=useRef(config);
+  useEffect(()=>{ configRef.current=config; },[config]);
+
+  const theme=THEMES[config.themeId]||THEMES.classic;
+  const accent=config.customAccent||theme.accent;
+
+  useEffect(()=>localStorage.setItem("lb_v7",JSON.stringify(config)),[config]);
+
+  useEffect(()=>{
+    if(!config.rain.on) return;
+    const speeds=[4,2.5,2][config.rain.speed-1]||2.5;
+    const gap=[1200,800,500][config.rain.density-1]||800;
+    const iv=setInterval(()=>{
+      const id=Date.now()+Math.random();
+      setParticles(p=>[...p,{id,left:Math.random()*100,dur:speeds+Math.random()*2,size:11+Math.random()*12,emoji:config.rain.emoji}]);
+      setTimeout(()=>setParticles(p=>p.filter(x=>x.id!==id)),7000);
+    },gap);
+    return()=>clearInterval(iv);
+  },[config.rain.on,config.rain.emoji,config.rain.speed,config.rain.density]);
+
+  // Pré-preenche contato se o usuário estiver logado e os campos estiverem vazios
+  useEffect(()=>{
+    if(!user) return;
+    setConfig(p=>{
+      const c=p.contact||{};
+      if(c.email) return p; // já tem, não sobrescreve
+      return {...p,contact:{...c,email:user.email||c.email||"",name:c.name||user.user_metadata?.name||"",phone:c.phone||""}};
+    });
+  },[user?.id]);
+
+  const set=useCallback((k,v)=>setConfig(p=>({...p,[k]:v})),[]);
+  const setR=useCallback((k,v)=>setConfig(p=>({...p,rain:{...p.rain,[k]:v}})),[]);
+  const setE=useCallback((k,v)=>setConfig(p=>({...p,envelope:{...p.envelope,[k]:v}})),[]);
+  const setW=useCallback(k=>setConfig(p=>({...p,widgets:{...p.widgets,[k]:!p.widgets[k]}})),[]);
+
+  const handleFiles=useCallback(async(files)=>{
+    try{
+      const list=Array.from(files||[]).filter(f=>f.type?.startsWith("image/"));
+      if(!list.length) return;
+      const room=9-(configRef.current.photos?.length||0);
+      const picked=list.slice(0,Math.max(0,room));
+      if(!picked.length) return;
+      setStatusMsg("Processando fotos…");
+      const newOnes=[];
+      for(const file of picked){
+        const b64=await fileToBase64(file);
+        newOnes.push({id:uid(),url:URL.createObjectURL(file),date:"",_local:true,name:file.name||"photo.jpg",type:file.type||"image/jpeg",base64:b64});
+      }
+      setConfig(p=>({...p,photos:[...p.photos,...newOnes].slice(0,9)}));
+      setStatusMsg("");
+    }catch(e){
+      console.error(e);
+      alert(e.message||"Erro ao processar imagens");
+      setStatusMsg("");
+    }
+  },[]);
+
+  const envIcons=ENV_ICONS.slice(envPage*IPP,(envPage+1)*IPP);
+  const STEPS=[{n:1,l:"Visual"},{n:2,l:"Texto"},{n:3,l:"Mídia"},{n:4,l:"Contato"},{n:5,l:"Publicar"}];
+
+  const WTog=({wk,icon,label,sub})=>(
+    <div className={`tog${config.widgets[wk]?" on":""}`} onClick={()=>setW(wk)}>
+      <div style={{display:"flex",alignItems:"center",gap:10}}>
+        <div style={{width:32,height:32,borderRadius:9,background:config.widgets[wk]?`${accent}22`:"rgba(255,255,255,.04)",border:`1px solid ${config.widgets[wk]?accent+"44":"rgba(255,255,255,.07)"}`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:15,transition:"all .2s"}}>{icon}</div>
+        <div><div style={{fontSize:13,fontWeight:800}}>{label}</div><div style={{fontSize:10,color:"rgba(255,255,255,.38)"}}>{sub}</div></div>
+      </div>
+      <div className={`dot ${config.widgets[wk]?"on":"off"}`}/>
+    </div>
+  );
+
+  return(
+    <div style={{display:"flex",flexDirection:"column",minHeight:"100vh"}}>
+      {showLogin&&<LoginModal onClose={()=>setShowLogin(false)} accent={accent}/>}
+      {showMyCards&&user&&<MyCards user={user} accent={accent} onClose={()=>setShowMyCards(false)}/>}
+
+      <nav>
+        <div style={{display:"flex",alignItems:"center",gap:9}}>
+          <div style={{width:28,height:28,borderRadius:8,background:`${accent}22`,border:`1px solid ${accent}44`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:14}}>💌</div>
+          <span style={{fontFamily:"Fraunces,serif",fontSize:20,fontWeight:900,letterSpacing:"-.02em"}}>LoveBuilder</span>
+          <span style={{fontSize:9,fontWeight:900,letterSpacing:".15em",textTransform:"uppercase",background:"rgba(255,255,255,.07)",border:"1px solid rgba(255,255,255,.1)",borderRadius:99,padding:"2px 7px",color:"rgba(255,255,255,.5)"}}>BETA</span>
+        </div>
+        <div style={{display:"flex",alignItems:"center",gap:8}}>
+          {user?(
+            <>
+              <button onClick={()=>setShowMyCards(true)}
+                style={{padding:"6px 13px",background:`${accent}22`,border:`1px solid ${accent}44`,borderRadius:99,color:accent,fontSize:11,fontWeight:900,cursor:"pointer"}}>
+                💌 Meus cartões
+              </button>
+              <button onClick={()=>sb.auth.signOut()}
+                style={{padding:"6px 11px",background:"rgba(255,255,255,.06)",border:"1px solid rgba(255,255,255,.1)",borderRadius:99,color:"rgba(255,255,255,.5)",fontSize:11,fontWeight:700,cursor:"pointer"}}>
+                Sair
+              </button>
+            </>
+          ):(
+            <button onClick={()=>setShowLogin(true)}
+              style={{padding:"6px 16px",background:"rgba(255,255,255,.08)",border:"1px solid rgba(255,255,255,.14)",borderRadius:99,color:"#fff",fontSize:11,fontWeight:800,cursor:"pointer"}}>
+              Entrar
+            </button>
+          )}
+        </div>
+      </nav>
+
+      {/* ── Floating tab: Criar / Visualizar ── */}
+      <div id="floating-tab">
+        {[["builder","✦ Criar"],["preview","👁 Visualizar"]].map(([v,l])=>(
+          <button key={v} className={mv===v?"active":""} onClick={()=>setMv(v)}>{l}</button>
+        ))}
+      </div>
+
+      {/* ── Floating nav: Voltar / Continuar ── */}
+      <div id="floating-nav" style={{display:"flex"}}>
+        <button className="btn-back"
+          style={{opacity:step===1?.35:1,pointerEvents:step===1?"none":"auto"}}
+          onClick={()=>setStep(s=>Math.max(1,s-1))}>← Voltar</button>
+        <button className="btn-next"
+          onClick={()=>setStep(s=>s<5?s+1:s)}>
+          {step<5?"Continuar →":"✓ Pronto"}
+        </button>
+      </div>
+
+      <div id="mtog"/>
+
+      <div id="layout">
+        <div id="builder" style={{display:mv==="builder"?"block":"none"}}>
+          <div id="binner">
+            <div className="step-bar">
+              {STEPS.map(s=>(
+                <button key={s.n} className={`step-btn${step===s.n?" active":""}`} onClick={()=>setStep(s.n)}>
+                  <span className="step-num">{s.n}</span>{s.l}
+                </button>
+              ))}
+            </div>
+
+            {statusMsg&&(
+              <div style={{background:"rgba(255,255,255,.05)",border:"1px solid rgba(255,255,255,.09)",borderRadius:12,padding:"10px 12px",fontSize:12,color:"rgba(255,255,255,.75)"}}>{statusMsg}</div>
+            )}
+
+            {/* STEP 1 */}
+            {step===1&&(
+              <div className="fadein" style={{display:"flex",flexDirection:"column",gap:20}}>
+
+                {/* ── TEMPLATE SELECTOR ── */}
+                <div>
+                  <span className="sec">Template</span>
+                  <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8}}>
+                    {Object.values(TEMPLATES).map(tpl=>{
+                      const active=config.templateId===tpl.id;
+                      return(
+                        <div key={tpl.id} onClick={()=>set("templateId",tpl.id)}
+                          style={{borderRadius:16,overflow:"hidden",cursor:"pointer",border:`2px solid ${active?tpl.color+"cc":"rgba(255,255,255,.07)"}`,transition:"all .17s",background:active?`${tpl.color}11`:"rgba(255,255,255,.03)"}}>
+                          <div style={{height:60,background:tpl.previewBg,display:"flex",alignItems:"center",justifyContent:"center",fontSize:26,position:"relative"}}>
+                            {tpl.icon}
+                            {active&&<div style={{position:"absolute",top:6,right:8,width:8,height:8,borderRadius:"50%",background:tpl.color,boxShadow:`0 0 6px ${tpl.color}`}}/>}
+                          </div>
+                          <div style={{padding:"9px 11px"}}>
+                            <div style={{fontSize:12,fontWeight:900,color:active?tpl.color:"#fff"}}>{tpl.label}</div>
+                            <div style={{fontSize:10,color:"rgba(255,255,255,.35)",marginTop:2,lineHeight:1.3}}>{tpl.desc}</div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                  {config.templateId!=="classic"&&(
+                    <div style={{marginTop:8,padding:"8px 11px",background:"rgba(255,255,255,.04)",border:"1px solid rgba(255,255,255,.07)",borderRadius:10,fontSize:10,color:"rgba(255,255,255,.4)",lineHeight:1.5}}>
+                      💡 Este template tem campos exclusivos — veja abaixo.
+                    </div>
+                  )}
+                </div>
+
+                {/* ── CAMPOS EXTRAS DO TEMPLATE NETFLIX ── */}
+                {config.templateId==="netflix"&&(
+                  <div style={{display:"flex",flexDirection:"column",gap:12,padding:"14px",background:"rgba(229,9,20,.06)",border:"1px solid rgba(229,9,20,.2)",borderRadius:16}}>
+                    <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:2}}>
+                      <span style={{fontSize:16}}>🎬</span>
+                      <span style={{fontSize:11,fontWeight:900,color:"#E50914",letterSpacing:".1em",textTransform:"uppercase"}}>Campos Netflix</span>
+                    </div>
+                    <div>
+                      <span className="sec">Vídeo (URL .mp4 ou .webm)</span>
+                      <VideoUrlField value={config.videoUrl||""} onChange={v=>set("videoUrl",v)}/>
+                    </div>
+
+                  </div>
+                )}
+
+                <div>
+                  <span className="sec">Tema</span>
+                  <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:8}}>
+                    {Object.values(THEMES).map(t=>(
+                      <div key={t.id} className={`tc${config.themeId===t.id?" sel":""}`} onClick={()=>set("themeId",t.id)}>
+                        <div style={{height:52,background:t.prev,display:"flex",alignItems:"center",justifyContent:"center",fontSize:22}}>{t.icon}</div>
+                        <div style={{padding:"7px 9px",background:"rgba(255,255,255,.04)"}}>
+                          <div style={{fontSize:10,fontWeight:800}}>{t.label}</div>
+                          <div style={{width:14,height:3,background:t.accent,borderRadius:99,marginTop:3,opacity:.8}}/>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+                <div>
+                  <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:8}}>
+                    <span className="sec" style={{margin:0}}>Cor de destaque</span>
+                    {config.customAccent&&<button onClick={()=>set("customAccent","")} style={{fontSize:10,color:"rgba(255,255,255,.45)",background:"none",border:"none",cursor:"pointer"}}>↺ padrão</button>}
+                  </div>
+                  <div style={{display:"flex",flexWrap:"wrap",gap:6,alignItems:"center"}}>
+                    {PALETTE.map(c=>(<div key={c} className={`sw${accent===c?" active":""}`} style={{background:c}} onClick={()=>set("customAccent",c===theme.accent?"":c)} title={c}/>))}
+                    <div style={{display:"flex",alignItems:"center",gap:6,marginLeft:2}}>
+                      <input type="color" value={accent} onChange={e=>set("customAccent",e.target.value)}/>
+                      <span style={{fontSize:10,fontFamily:"Space Mono,monospace",color:"rgba(255,255,255,.4)"}}>{accent}</span>
+                    </div>
+                  </div>
+                </div>
+                <div>
+                  <span className="sec">Texto do tema (tagline)</span>
+                  <input className="inp" placeholder={theme.dt} value={config.customTagline} onChange={e=>set("customTagline",e.target.value)}/>
+                  <p style={{fontSize:10,color:"rgba(255,255,255,.3)",marginTop:5}}>Vazio = padrão: "{theme.dt}"</p>
+                </div>
+                <SlugField config={config} set={set} accent={accent}/>
+                {/* rain */}
+                <div>
+                  <span className="sec">Chuva de emojis</span>
+                  <div className={`tog${config.rain.on?" on":""}`} onClick={()=>setR("on",!config.rain.on)}>
+                    <div style={{display:"flex",alignItems:"center",gap:10}}>
+                      <div style={{width:32,height:32,borderRadius:9,background:config.rain.on?`${accent}22`:"rgba(255,255,255,.04)",border:`1px solid ${config.rain.on?accent+"44":"rgba(255,255,255,.07)"}`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:16,transition:"all .2s"}}>{config.rain.emoji}</div>
+                      <div><div style={{fontSize:13,fontWeight:800}}>Chuva de emojis</div><div style={{fontSize:10,color:"rgba(255,255,255,.38)"}}>Animação de fundo</div></div>
+                    </div>
+                    <div className={`dot ${config.rain.on?"on":"off"}`}/>
+                  </div>
+                  <div className={`sub ${config.rain.on?"open":"closed"}`}>
+                    <div className="sub-body">
+                      <div>
+                        <span className="sec">Conjunto</span>
+                        <div style={{display:"flex",gap:4,flexWrap:"wrap",marginBottom:10}}>
+                          {Object.entries(ESETS).map(([k,v])=>(
+                            <button key={k} onClick={()=>setEset(k)} style={{padding:"5px 10px",borderRadius:8,border:`1px solid ${eset===k?"rgba(255,255,255,.4)":"rgba(255,255,255,.08)"}`,background:eset===k?"rgba(255,255,255,.12)":"rgba(255,255,255,.04)",color:eset===k?"#fff":"rgba(255,255,255,.5)",fontSize:10,fontWeight:800,cursor:"pointer",transition:"all .15s"}}>{v.l}</button>
+                          ))}
+                        </div>
+                        <div style={{display:"grid",gridTemplateColumns:"repeat(6,1fr)",gap:5}}>
+                          {ESETS[eset].e.map(e=>(<div key={e} className={`eb${config.rain.emoji===e?" active":""}`} onClick={()=>setR("emoji",e)}>{e}</div>))}
+                        </div>
+                      </div>
+                      <div>
+                        <span className="sec">Emoji personalizado</span>
+                        <div style={{display:"flex",gap:8,alignItems:"center"}}>
+                          <input className="inp" style={{flex:1}} placeholder="Cole qualquer emoji…" value={config.rain.emoji} onChange={e=>setR("emoji",e.target.value.trim()||"❤️")} maxLength={6}/>
+                          <div style={{width:40,height:40,borderRadius:10,background:"rgba(255,255,255,.07)",border:"1px solid rgba(255,255,255,.1)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:20,flexShrink:0}}>{config.rain.emoji}</div>
+                        </div>
+                      </div>
+                      <div>
+                        <div style={{display:"flex",justifyContent:"space-between",marginBottom:6}}>
+                          <span className="sec" style={{margin:0}}>Velocidade</span>
+                          <span style={{fontSize:11,color:"rgba(255,255,255,.45)"}}>{["Devagar","Normal","Rápido"][config.rain.speed-1]}</span>
+                        </div>
+                        <input type="range" min={1} max={3} step={1} value={config.rain.speed} onChange={e=>setR("speed",+e.target.value)}/>
+                      </div>
+                      <div>
+                        <div style={{display:"flex",justifyContent:"space-between",marginBottom:6}}>
+                          <span className="sec" style={{margin:0}}>Quantidade</span>
+                          <span style={{fontSize:11,color:"rgba(255,255,255,.45)"}}>{["Poucos","Normal","Muitos"][config.rain.density-1]}</span>
+                        </div>
+                        <input type="range" min={1} max={3} step={1} value={config.rain.density} onChange={e=>setR("density",+e.target.value)}/>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                {/* envelope */}
+                <div>
+                  <span className="sec">Envelope de entrada</span>
+                  <div className={`tog${config.envelope.on?" on":""}`} onClick={()=>setE("on",!config.envelope.on)}>
+                    <div style={{display:"flex",alignItems:"center",gap:10}}>
+                      <div style={{width:32,height:32,borderRadius:9,background:config.envelope.on?`${accent}22`:"rgba(255,255,255,.04)",border:`1px solid ${config.envelope.on?accent+"44":"rgba(255,255,255,.07)"}`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:16,transition:"all .2s"}}>{config.envelope.icon}</div>
+                      <div><div style={{fontSize:13,fontWeight:800}}>Envelope</div><div style={{fontSize:10,color:"rgba(255,255,255,.38)"}}>Tela de abertura</div></div>
+                    </div>
+                    <div className={`dot ${config.envelope.on?"on":"off"}`}/>
+                  </div>
+                  <div className={`sub ${config.envelope.on?"open":"closed"}`}>
+                    <div className="sub-body">
+                      <div>
+                        <span className="sec">Ícone do envelope</span>
+                        <div style={{display:"grid",gridTemplateColumns:"repeat(5,1fr)",gap:5,marginBottom:8}}>
+                          {envIcons.map(e=>(<div key={e} className={`eb${config.envelope.icon===e?" active":""}`} style={{fontSize:18}} onClick={()=>setE("icon",e)}>{e}</div>))}
+                        </div>
+                        <div style={{display:"flex",gap:6}}>
+                          <button onClick={()=>setEnvPage(p=>Math.max(0,p-1))} disabled={envPage===0} style={{flex:1,padding:"5px",background:"rgba(255,255,255,.05)",border:"1px solid rgba(255,255,255,.08)",borderRadius:8,color:"#fff",fontSize:11,cursor:"pointer",opacity:envPage===0?.35:1}}>← Anterior</button>
+                          <button onClick={()=>setEnvPage(p=>p+1)} disabled={(envPage+1)*IPP>=ENV_ICONS.length} style={{flex:1,padding:"5px",background:"rgba(255,255,255,.05)",border:"1px solid rgba(255,255,255,.08)",borderRadius:8,color:"#fff",fontSize:11,cursor:"pointer",opacity:(envPage+1)*IPP>=ENV_ICONS.length?.35:1}}>Próximos →</button>
+                        </div>
+                      </div>
+                      <div>
+                        <span className="sec">Ícone personalizado</span>
+                        <div style={{display:"flex",gap:8,alignItems:"center"}}>
+                          <input className="inp" style={{flex:1}} placeholder="Cole qualquer emoji…" value={config.envelope.icon} onChange={e=>setE("icon",e.target.value.trim()||"💌")} maxLength={6}/>
+                          <div style={{width:40,height:40,borderRadius:10,background:`${accent}18`,border:`1px solid ${accent}33`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:20,flexShrink:0}}>{config.envelope.icon}</div>
+                        </div>
+                      </div>
+                      <div><span className="sec">Título</span><input className="inp" placeholder="Você recebeu um presente" value={config.envelope.title} onChange={e=>setE("title",e.target.value)}/></div>
+                      <div><span className="sec">Subtítulo</span><input className="inp" placeholder="Toque no envelope para abrir ✦" value={config.envelope.subtitle} onChange={e=>setE("subtitle",e.target.value)}/></div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* STEP 2 */}
+            {step===2&&(
+              <div className="fadein" style={{display:"flex",flexDirection:"column",gap:18}}>
+                <div>
+                  <span className="sec">Destinatário & remetente</span>
+                  <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8}}>
+                    <input className="inp" placeholder="Para (nome)" value={config.receiver} onChange={e=>set("receiver",e.target.value)}/>
+                    <input className="inp" placeholder="De (nome)" value={config.sender} onChange={e=>set("sender",e.target.value)}/>
+                  </div>
+                </div>
+                <div><span className="sec">Declaração</span><textarea className="inp" placeholder="Escreva sua mensagem…" value={config.message} onChange={e=>set("message",e.target.value)} style={{height:100}}/></div>
+                <div>
+                  <span className="sec">Widgets</span>
+                  <div style={{display:"flex",flexDirection:"column",gap:7}}>
+                    <WTog wk="counter" icon="⏱️" label="Contador de tempo" sub="Dias juntos"/>
+                    <WTog wk="scratch" icon="🎰" label="Raspadinha secreta" sub="Mensagem surpresa"/>
+                  </div>
+                </div>
+                {config.widgets.counter&&(<div><span className="sec">Data de início</span><input type="date" className="inp" value={config.startDate} onChange={e=>set("startDate",e.target.value)}/></div>)}
+                {config.widgets.scratch&&(<div><span className="sec">Mensagem da raspadinha</span><textarea className="inp" placeholder="Sua mensagem secreta…" value={config.secretMessage} onChange={e=>set("secretMessage",e.target.value)} style={{height:80}}/></div>)}
+              </div>
+            )}
+
+            {/* STEP 3 */}
+            {step===3&&(
+              <div className="fadein" style={{display:"flex",flexDirection:"column",gap:18}}>
+                <div>
+                  <span className="sec">Fotos ({config.photos.length}/9)</span>
+                  <input id="fi" type="file" multiple accept="image/*" style={{display:"none"}} onChange={e=>handleFiles(e.target.files)}/>
+                  <label htmlFor="fi"
+                    onDrop={e=>{e.preventDefault();handleFiles(e.dataTransfer.files);}}
+                    onDragOver={e=>e.preventDefault()}
+                    style={{display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",height:86,border:"2px dashed rgba(255,255,255,.09)",borderRadius:15,cursor:"pointer",gap:5,transition:"background .2s"}}
+                    onMouseEnter={e=>e.currentTarget.style.background="rgba(255,255,255,.04)"}
+                    onMouseLeave={e=>e.currentTarget.style.background="transparent"}
+                  >
+                    <span style={{fontSize:22,opacity:.4}}>📸</span>
+                    <span style={{fontSize:11,color:"rgba(255,255,255,.35)",fontWeight:700}}>Clique ou arraste (até 9)</span>
+                    <span style={{fontSize:10,color:"rgba(255,255,255,.28)"}}>As imagens ficam no rascunho e são enviadas após o pagamento.</span>
+                  </label>
+                  {config.photos.length>0&&(
+                    <div className="hs" style={{display:"flex",gap:10,marginTop:10,overflowX:"auto",paddingBottom:2}}>
+                      {config.photos.map(p=>(
+                        <div key={p.id} style={{flexShrink:0,width:86}}>
+                          <div style={{position:"relative"}}>
+                            <div style={{width:86,height:70,borderRadius:12,overflow:"hidden",border:"1px solid rgba(255,255,255,.1)"}}>
+                              <img src={p.url} style={{width:"100%",height:"100%",objectFit:"cover"}}/>
+                            </div>
+                            <button onClick={()=>setConfig(prev=>({...prev,photos:prev.photos.filter(x=>x.id!==p.id)}))} style={{position:"absolute",top:-6,right:-6,width:20,height:20,borderRadius:"50%",background:"#ef4444",border:"none",color:"#fff",cursor:"pointer",fontSize:11,fontWeight:900,display:"flex",alignItems:"center",justifyContent:"center"}}>×</button>
+                          </div>
+                          <input type="date" className="inp" value={p.date||""} onChange={e=>{const v=e.target.value;setConfig(prev=>({...prev,photos:prev.photos.map(x=>x.id===p.id?{...x,date:v}:x)}));}} style={{marginTop:6,padding:"7px 9px",fontSize:11}} title="Data da foto"/>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+                <div><span className="sec">Música (Spotify ou YouTube)</span><input className="inp" placeholder="Cole o link aqui…" value={config.musicUrl} onChange={e=>set("musicUrl",e.target.value)}/></div>
+                <div>
+                  <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:8}}>
+                    <span className="sec" style={{margin:0}}>Galeria</span>
+                    <button onClick={()=>setW("gallery")} style={{padding:"5px 11px",borderRadius:8,background:config.widgets.gallery?"rgba(255,255,255,.11)":"rgba(255,255,255,.04)",border:`1px solid ${config.widgets.gallery?"rgba(255,255,255,.28)":"rgba(255,255,255,.08)"}`,color:"#fff",fontSize:10,fontWeight:800,cursor:"pointer"}}>{config.widgets.gallery?"✓ Ligada":"Desligada"}</button>
+                  </div>
+                  <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:7}}>
+                    {[{id:"polaroid",l:"Polaroid",i:"🖼️"},{id:"bento",l:"Bento",i:"⊞"},{id:"carousel",l:"Carrossel",i:"🎞️"}].map(g=>(
+                      <button key={g.id} className={`gb${config.galleryStyle===g.id?" sel":""}`} onClick={()=>set("galleryStyle",g.id)}><span style={{fontSize:18}}>{g.i}</span>{g.l}</button>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* STEP 4 — CONTATO */}
+            {step===4&&(
+              <div className="fadein" style={{display:"flex",flexDirection:"column",gap:18}}>
+                <div style={{textAlign:"center",padding:"8px 0 4px"}}>
+                  <div style={{fontSize:32,marginBottom:8}}>📬</div>
+                  <div style={{fontFamily:"Fraunces,serif",fontSize:20,fontWeight:900,marginBottom:4}}>Seus dados de contato</div>
+                  <div style={{fontSize:12,color:"rgba(255,255,255,.42)"}}>Usados para você acessar e gerenciar seus cartões depois.</div>
+                </div>
+                {user&&(
+                  <div style={{display:"flex",alignItems:"center",gap:10,background:"rgba(74,222,128,.08)",border:"1px solid rgba(74,222,128,.2)",borderRadius:12,padding:"10px 14px",fontSize:12,color:"#4ade80"}}>
+                    <span>✓</span>
+                    <span>Logado como <strong>{user.email}</strong> — campos pré-preenchidos.</span>
+                  </div>
+                )}
+                <div>
+                  <span className="sec">Nome completo</span>
+                  <input className="inp" placeholder="Seu nome" value={config.contact.name}
+                    onChange={e=>setConfig(p=>({...p,contact:{...p.contact,name:e.target.value}}))}/>
+                </div>
+                <div>
+                  <span className="sec">E-mail</span>
+                  <input className="inp" type="email" placeholder="seu@email.com" value={config.contact.email}
+                    onChange={e=>setConfig(p=>({...p,contact:{...p.contact,email:e.target.value.trim()}}))}/>
+                  <p style={{fontSize:10,color:"rgba(255,255,255,.3)",marginTop:5}}>Você receberá um código para acessar seus cartões.</p>
+                </div>
+                <div>
+                  <span className="sec">WhatsApp / Telefone</span>
+                  <input className="inp" type="tel" placeholder="(11) 99999-9999" value={config.contact.phone}
+                    onChange={e=>setConfig(p=>({...p,contact:{...p.contact,phone:e.target.value}}))}/>
+                </div>
+                <div style={{background:"rgba(255,255,255,.04)",border:"1px solid rgba(255,255,255,.08)",borderRadius:14,padding:"12px 14px",fontSize:12,color:"rgba(255,255,255,.45)",lineHeight:1.6}}>
+                  🔒 Seus dados ficam associados ao cartão e são usados apenas para acesso à área de gerenciamento.
+                </div>
+              </div>
+            )}
+
+            {/* STEP 5 */}
+            {step===5&&(
+              <div className="fadein" style={{display:"flex",flexDirection:"column",gap:14}}>
+                <div style={{textAlign:"center",padding:"12px 0 4px"}}>
+                  <div style={{fontSize:40,marginBottom:9}}>🎉</div>
+                  <div style={{fontFamily:"Fraunces,serif",fontSize:22,fontWeight:900,marginBottom:4}}>Tudo pronto!</div>
+                  <div style={{fontSize:12,color:"rgba(255,255,255,.42)"}}>Seu presente digital está configurado.</div>
+                </div>
+                <div style={{background:"rgba(255,255,255,.04)",border:"1px solid rgba(255,255,255,.09)",borderRadius:14,padding:"13px 15px"}}>
+                  <span className="sec">Seu link (público)</span>
+                  <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",gap:9}}>
+                    <span style={{fontFamily:"Space Mono,monospace",fontSize:11,fontWeight:800,wordBreak:"break-all"}}>{config.slug?shareUrlFromSlug(config.slug):"Defina o slug no Step 1"}</span>
+                    <button onClick={()=>{if(!config.slug)return;navigator.clipboard?.writeText(shareUrlFromSlug(config.slug));try{confetti({particleCount:40,spread:40});}catch(e){}}} style={{flexShrink:0,padding:"6px 12px",background:"rgba(255,255,255,.1)",border:"1px solid rgba(255,255,255,.14)",borderRadius:8,color:"#fff",fontSize:11,fontWeight:800,cursor:"pointer"}}>Copiar</button>
+                  </div>
+                </div>
+                <div style={{background:"rgba(255,255,255,.04)",border:"1px solid rgba(255,255,255,.09)",borderRadius:14,padding:"13px 15px",display:"flex",flexDirection:"column",gap:6}}>
+                  <span className="sec">Resumo</span>
+                  {[
+                    {l:"Tema",v:`${theme.icon} ${theme.label}`},
+                    {l:"Tagline",v:config.customTagline||theme.dt},
+                    {l:"Para",v:config.receiver||"—"},
+                    {l:"Fotos",v:`${config.photos.length} foto(s)`},
+                    {l:"Galeria",v:config.galleryStyle},
+                    {l:"Widgets",v:[config.widgets.counter&&"Contador",config.widgets.scratch&&"Raspadinha",config.widgets.gallery&&"Galeria"].filter(Boolean).join(", ")||"—"},
+                  ].map(row=>(
+                    <div key={row.l} style={{display:"flex",justifyContent:"space-between",fontSize:12}}>
+                      <span style={{color:"rgba(255,255,255,.4)"}}>{row.l}</span>
+                      <span style={{fontWeight:700}}>{row.v}</span>
+                    </div>
+                  ))}
+                </div>
+                <button
+                  className="pub"
+                  style={{background:accent,boxShadow:`0 8px 28px ${accent}50`}}
+                  onClick={async()=>{
+                    try{
+                      const slug=safeSlug(config.slug);
+                      if(!slug) return alert("Defina a URL (slug) no Passo 1.");
+                      const {name,email,phone}=config.contact||{};
+                      if(!name?.trim()) return alert("Informe seu nome no Passo 4.");
+                      if(!email?.trim()||!/^[^@]+@[^@]+\.[^@]+$/.test(email)) return alert("Informe um e-mail válido no Passo 4.");
+                      if(!phone?.trim()) return alert("Informe seu WhatsApp/telefone no Passo 4.");
+                      setStatusMsg("Abrindo pagamento…");
+                      await goToStripeCheckout(slug);
+                    }catch(e){
+                      console.error(e);
+                      alert(e.message||"Falha ao abrir pagamento");
+                      setStatusMsg("");
+                    }
+                  }}
+                >
+                  💳 Publicar & Pagar — R$14,90
+                </button>
+                <div style={{textAlign:"center",fontSize:10,color:"rgba(255,255,255,.25)",lineHeight:1.7}}>
+                  Após pagar, você volta aqui e o sistema publica automaticamente.
+                </div>
+              </div>
+            )}
+
+            <div className="desktop-nav" style={{display:"flex",justifyContent:"space-between",paddingTop:16,borderTop:"1px solid rgba(255,255,255,.07)"}}>
+              <button onClick={()=>setStep(s=>Math.max(1,s-1))} style={{padding:"9px 15px",background:"rgba(255,255,255,.06)",border:"1px solid rgba(255,255,255,.09)",borderRadius:10,color:"#fff",fontWeight:800,fontSize:12,cursor:"pointer",opacity:step===1?.3:1,pointerEvents:step===1?"none":"auto"}}>← Voltar</button>
+              <button onClick={()=>setStep(s=>s<5?s+1:1)} style={{padding:"9px 19px",background:"#fff",border:"none",borderRadius:10,color:"#07070f",fontWeight:900,fontSize:12,cursor:"pointer"}}>{step<5?"Continuar →":"Editar novamente"}</button>
+            </div>
+          </div>
+        </div>
+
+        <div id="preview" style={{display:mv==="preview"?"flex":"none",flexDirection:"column",alignItems:"center",padding:"28px 16px 48px",background:"radial-gradient(ellipse at 50% 18%,rgba(255,255,255,.025) 0%,transparent 70%)",position:"relative",overflow:"hidden"}}>
+          <div className="ring" style={{width:500,height:500}}/>
+          <div className="ring" style={{width:820,height:820}}/>
+          <div style={{display:"flex",alignItems:"center",gap:7,background:"rgba(255,255,255,.05)",border:"1px solid rgba(255,255,255,.09)",borderRadius:10,padding:"6px 12px",marginBottom:20}}>
+            <span style={{fontSize:14}}>{theme.icon}</span>
+            <span style={{fontSize:11,fontWeight:800,color:"rgba(255,255,255,.65)"}}>{theme.label}</span>
+            <div style={{width:6,height:6,borderRadius:"50%",background:accent,boxShadow:`0 0 6px ${accent}`}}/>
+            <span style={{fontSize:10,color:accent,fontWeight:800}}>{config.customTagline||theme.dt}</span>
+          </div>
+          <div style={{position:"sticky",top:20,display:"flex",flexDirection:"column",alignItems:"center"}}>
+            <TemplatePreview config={config} theme={theme} accent={accent} particles={particles}/>
+            <div style={{textAlign:"center",marginTop:10,fontSize:9,color:"rgba(255,255,255,.2)",fontWeight:900,letterSpacing:".12em",textTransform:"uppercase"}}>PRÉVIA AO VIVO</div>
+          </div>
+        </div>
+      </div>
+
+      <style>{`.desktop-nav{display:none}@media(min-width:1024px){.desktop-nav{display:flex!important;border-top:1px solid rgba(255,255,255,.07);padding-top:16px}}`}</style>
+    </div>
+  );
+};
+
+
+/* ════════════════════════════════════════════════════
+   AUTH — Login por OTP (e-mail sem senha)
+════════════════════════════════════════════════════ */
+const LoginModal=({onClose,accent="#f43f5e"})=>{
+  const [email,setEmail]=useState("");
+  const [code,setCode]=useState("");
+  const [step,setStep]=useState("email"); // email | code
+  const [loading,setLoading]=useState(false);
+  const [msg,setMsg]=useState("");
+
+  const sendOTP=async()=>{
+    if(!email.trim()||!/^[^@]+@[^@]+\.[^@]+$/.test(email)){setMsg("Informe um e-mail válido.");return;}
+    setLoading(true);setMsg("");
+    // shouldCreateUser:true + emailRedirectTo vazio força OTP numérico (não magic link)
+    const {error}=await sb.auth.signInWithOtp({
+      email:email.trim(),
+      options:{
+        shouldCreateUser:true,
+        emailRedirectTo: null, // força envio de código, não magic link
+      }
+    });
+    setLoading(false);
+    if(error){setMsg("Erro: "+error.message);return;}
+    setStep("code");
+    setMsg("Código enviado! Verifique sua caixa de entrada (pode cair no spam).");
+  };
+
+  const verifyOTP=async()=>{
+    if(code.length<8){setMsg("Digite o código de 8 dígitos.");return;}
+    setLoading(true);setMsg("");
+    const {error}=await sb.auth.verifyOtp({email:email.trim(),token:code.trim(),type:"email"});
+    setLoading(false);
+    if(error){setMsg("Código inválido ou expirado.");return;}
+    onClose();
+  };
+
+  return(
+    <div style={{position:"fixed",inset:0,zIndex:9000,background:"rgba(0,0,0,.75)",backdropFilter:"blur(12px)",display:"flex",alignItems:"center",justifyContent:"center",padding:20}}>
+      <div style={{width:"100%",maxWidth:400,background:"#0e0e1a",border:"1px solid rgba(255,255,255,.12)",borderRadius:22,padding:28}}>
+        <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:22}}>
+          <div>
+            <div style={{fontFamily:"Fraunces,serif",fontSize:22,fontWeight:900}}>Entrar</div>
+            <div style={{fontSize:12,color:"rgba(255,255,255,.4)",marginTop:2}}>Acesse seus cartões</div>
+          </div>
+          <button onClick={onClose} style={{background:"rgba(255,255,255,.08)",border:"none",borderRadius:99,width:32,height:32,cursor:"pointer",color:"rgba(255,255,255,.6)",fontSize:16,display:"flex",alignItems:"center",justifyContent:"center"}}>×</button>
+        </div>
+
+        {step==="email"&&(
+          <div style={{display:"flex",flexDirection:"column",gap:12}}>
+            <div>
+              <span className="sec">E-mail</span>
+              <input className="inp" type="email" placeholder="seu@email.com" value={email}
+                onChange={e=>setEmail(e.target.value)}
+                onKeyDown={e=>e.key==="Enter"&&sendOTP()}
+                autoFocus/>
+            </div>
+            {msg&&<div style={{fontSize:12,color:msg.startsWith("Erro")||msg.startsWith("Informe")?"#f87171":"#4ade80",background:"rgba(255,255,255,.04)",borderRadius:10,padding:"8px 12px"}}>{msg}</div>}
+            <button onClick={sendOTP} disabled={loading} style={{padding:"13px",background:accent,border:"none",borderRadius:13,color:"#fff",fontWeight:900,fontSize:14,cursor:"pointer",opacity:loading?.6:1}}>
+              {loading?"Enviando…":"Enviar código →"}
+            </button>
+          </div>
+        )}
+
+        {step==="code"&&(
+          <div style={{display:"flex",flexDirection:"column",gap:12}}>
+            <div style={{fontSize:13,color:"rgba(255,255,255,.55)",background:"rgba(255,255,255,.04)",borderRadius:12,padding:"10px 14px"}}>
+              Código enviado para <strong style={{color:"#fff"}}>{email}</strong>
+              <button onClick={()=>{setStep("email");setMsg("");setCode("");}} style={{display:"block",marginTop:4,background:"none",border:"none",color:accent,fontSize:11,cursor:"pointer",padding:0,fontWeight:700}}>Trocar e-mail</button>
+            </div>
+            <div>
+              <span className="sec">Código de 8 dígitos</span>
+              <input className="inp" type="text" inputMode="numeric" maxLength={8} placeholder="00000000" value={code}
+                onChange={e=>setCode(e.target.value.replace(/\D/g,""))}
+                onKeyDown={e=>e.key==="Enter"&&verifyOTP()}
+                autoFocus style={{fontSize:22,letterSpacing:"0.3em",textAlign:"center"}}/>
+            </div>
+            {msg&&<div style={{fontSize:12,color:msg.includes("inválido")||msg.includes("Digite")?"#f87171":"#4ade80",background:"rgba(255,255,255,.04)",borderRadius:10,padding:"8px 12px"}}>{msg}</div>}
+            <button onClick={verifyOTP} disabled={loading||code.length<8} style={{padding:"13px",background:accent,border:"none",borderRadius:13,color:"#fff",fontWeight:900,fontSize:14,cursor:"pointer",opacity:(loading||code.length<8)?.5:1}}>
+              {loading?"Verificando…":"Entrar ✓"}
+            </button>
+          </div>
+        )}
+
+        <div style={{textAlign:"center",marginTop:16,fontSize:10,color:"rgba(255,255,255,.25)"}}>
+          Sem senha. Sem cadastro. Só seu e-mail. 🔒
+        </div>
+      </div>
+    </div>
+  );
+};
+
+/* ════════════════════════════════════════════════════
+   MEUS CARTÕES — Dashboard do usuário
+════════════════════════════════════════════════════ */
+const MyCards=({user,accent,onClose})=>{
+  const [cards,setCards]=useState([]);
+  const [loading,setLoading]=useState(true);
+  const [saving,setSaving]=useState(null);
+  const [deleting,setDeleting]=useState(null);
+  const [editingCard,setEditingCard]=useState(null); // card completo em edição
+  const [editConfig,setEditConfig]=useState(null);   // config editada
+  const [saveMsg,setSaveMsg]=useState("");
+  const [showPaywall,setShowPaywall]=useState(false);
+
+  const fetchCards=async()=>{
+    setLoading(true);
+    const {data,error}=await sb.from("cards")
+      .select("id,slug,config,published,paid_at,created_at,edit_count")
+      .eq("user_id",user.id)
+      .order("created_at",{ascending:false});
+    setLoading(false);
+    if(!error) setCards(data||[]);
+  };
+  useEffect(()=>{fetchCards();},[]);
+
+  // ── Salvar edição ──
+  const saveEdit=async(sessionId=null)=>{
+    if(!editingCard||!editConfig) return;
+    setSaving(editingCard.id);
+    setSaveMsg("");
+    try{
+      let authHeader=`Bearer ${SUPABASE_ANON_KEY}`;
+      const {data:sd}=await sb.auth.getSession();
+      if(sd?.session?.access_token) authHeader=`Bearer ${sd.session.access_token}`;
+
+      // Monta fotos: separa novas (com base64) das existentes (só URL)
+      const photos=(editConfig.photos||[]).slice(0,9).map(p=>({
+        id:p.id, url:p.url, date:p.date||null,
+        base64:p.base64||"", name:p.name||"photo.jpg",
+        contentType:p.type||"image/jpeg", photo_date:p.date||null,
+      }));
+
+      const res=await fetch(`${FUNCTIONS_BASE}/save-card`,{
+        method:"POST",
+        headers:{"content-type":"application/json","apikey":SUPABASE_ANON_KEY,"authorization":authHeader},
+        body:JSON.stringify({slug:editingCard.slug, config:editConfig, photos, ...(sessionId?{session_id:sessionId}:{})}),
+      });
+      const data=await res.json().catch(()=>({}));
+
+      if(res.status===402||data.needsPayment){
+        setShowPaywall(true);
+        setSaving(null);
+        return;
+      }
+      if(!res.ok) throw new Error(data?.error||"Falha ao salvar.");
+
+      if(data.noChange){
+        setSaveMsg("✓ Nenhuma alteração detectada — salvo sem consumir edição.");
+      } else {
+        const rem=Math.max(0,3-data.edit_count);
+        setSaveMsg(rem>0?`✓ Salvo! Você ainda tem ${rem} edição(ões) grátis.`:"✓ Salvo! Edições grátis esgotadas — próximas custarão R$7,99.");
+      }
+      await fetchCards();
+      setTimeout(()=>{ setEditingCard(null); setEditConfig(null); setSaveMsg(""); },2200);
+    }catch(e){
+      setSaveMsg("Erro: "+(e.message||"falha ao salvar"));
+    }
+    setSaving(null);
+  };
+
+  // ── Paywall de edição paga ──
+  const goToEditCheckout=async()=>{
+    try{
+      let authHeader=`Bearer ${SUPABASE_ANON_KEY}`;
+      const {data:sd}=await sb.auth.getSession();
+      if(sd?.session?.access_token) authHeader=`Bearer ${sd.session.access_token}`;
+      const res=await fetch(`${FUNCTIONS_BASE}/create-checkout-edit`,{
+        method:"POST",
+        headers:{"content-type":"application/json","apikey":SUPABASE_ANON_KEY,"authorization":authHeader},
+        body:JSON.stringify({slug:editingCard.slug}),
+      });
+      const data=await res.json().catch(()=>({}));
+      if(!res.ok) throw new Error(data?.error||"Falha");
+      // Salva config no localStorage para recuperar após pagamento
+      localStorage.setItem("lb_edit_v1",JSON.stringify({slug:editingCard.slug,config:editConfig,photos:(editConfig.photos||[])}));
+      window.location.href=data.url;
+    }catch(e){ setSaveMsg("Erro: "+e.message); }
+  };
+
+  // ── Excluir (via edge function que limpa storage) ──
+  const deleteCard=async(id,slug)=>{
+    if(!confirm(`Excluir o cartão "${slug}" e todos os arquivos associados? Esta ação não pode ser desfeita.`)) return;
+    setDeleting(id);
+    try{
+      let authHeader=`Bearer ${SUPABASE_ANON_KEY}`;
+      const {data:sd}=await sb.auth.getSession();
+      if(sd?.session?.access_token) authHeader=`Bearer ${sd.session.access_token}`;
+      const res=await fetch(`${FUNCTIONS_BASE}/delete-card`,{
+        method:"POST",
+        headers:{"content-type":"application/json","apikey":SUPABASE_ANON_KEY,"authorization":authHeader},
+        body:JSON.stringify({cardId:id}),
+      });
+      const data=await res.json().catch(()=>({}));
+      if(!res.ok) throw new Error(data?.error||"Falha ao excluir");
+      await fetchCards();
+    }catch(e){ alert("Erro ao excluir: "+e.message); }
+    setDeleting(null);
+  };
+
+  const th=(cfg)=>THEMES[cfg?.themeId]||THEMES.classic;
+  const FREE_EDITS=3;
+
+  // ── Tela de edição ──
+  if(editingCard&&editConfig){
+    const editCount=editingCard.edit_count||0;
+    const freeLeft=Math.max(0,FREE_EDITS-editCount);
+    const ac=editConfig.customAccent||(THEMES[editConfig.themeId]||THEMES.classic).accent;
+
+    return(
+      <div style={{position:"fixed",inset:0,zIndex:8000,background:"rgba(0,0,0,.9)",backdropFilter:"blur(14px)",display:"flex",flexDirection:"column",overflowY:"auto"}}>
+        {showPaywall&&(
+          <div style={{position:"fixed",inset:0,zIndex:9500,background:"rgba(0,0,0,.85)",backdropFilter:"blur(10px)",display:"flex",alignItems:"center",justifyContent:"center",padding:20}}>
+            <div style={{maxWidth:400,width:"100%",background:"#0e0e1a",border:"1px solid rgba(255,255,255,.12)",borderRadius:22,padding:28,textAlign:"center"}}>
+              <div style={{fontSize:36,marginBottom:12}}>🔒</div>
+              <div style={{fontFamily:"Fraunces,serif",fontSize:22,fontWeight:900,marginBottom:8}}>Edições grátis esgotadas</div>
+              <div style={{fontSize:13,color:"rgba(255,255,255,.5)",marginBottom:20,lineHeight:1.6}}>
+                Você usou suas 3 edições grátis neste cartão.<br/>
+                Esta edição custa <strong style={{color:"#fff"}}>R$7,99</strong>.
+              </div>
+              <button onClick={goToEditCheckout}
+                style={{width:"100%",padding:"14px",background:ac,border:"none",borderRadius:13,color:"#fff",fontWeight:900,fontSize:15,cursor:"pointer",marginBottom:10}}>
+                💳 Pagar R$7,99 e salvar
+              </button>
+              <button onClick={()=>setShowPaywall(false)}
+                style={{width:"100%",padding:"11px",background:"rgba(255,255,255,.06)",border:"1px solid rgba(255,255,255,.1)",borderRadius:13,color:"rgba(255,255,255,.6)",fontWeight:700,fontSize:13,cursor:"pointer"}}>
+                Cancelar
+              </button>
+            </div>
+          </div>
+        )}
+
+        <div style={{maxWidth:680,width:"100%",margin:"0 auto",padding:"28px 20px 60px"}}>
+          <div style={{display:"flex",alignItems:"center",gap:12,marginBottom:20}}>
+            <button onClick={()=>{setEditingCard(null);setEditConfig(null);setSaveMsg("");}}
+              style={{background:"rgba(255,255,255,.08)",border:"1px solid rgba(255,255,255,.1)",borderRadius:10,padding:"7px 14px",color:"rgba(255,255,255,.7)",fontWeight:700,fontSize:12,cursor:"pointer"}}>
+              ← Voltar
+            </button>
+            <div style={{flex:1}}>
+              <div style={{fontFamily:"Fraunces,serif",fontSize:18,fontWeight:900}}>Editando: {editingCard.slug}</div>
+              <div style={{fontSize:11,color:freeLeft>0?"#4ade80":"#f87171",marginTop:2}}>
+                {freeLeft>0?`${freeLeft} edição(ões) grátis restante(s)`:"Edições grátis esgotadas — próxima custa R$7,99"}
+              </div>
+            </div>
+            <button onClick={()=>saveEdit()} disabled={!!saving}
+              style={{padding:"10px 22px",background:ac,border:"none",borderRadius:12,color:"#fff",fontWeight:900,fontSize:13,cursor:"pointer",opacity:saving?.6:1,boxShadow:`0 4px 18px ${ac}44`}}>
+              {saving?"Salvando…":"💾 Salvar alterações"}
+            </button>
+          </div>
+
+          {saveMsg&&(
+            <div style={{background:saveMsg.startsWith("Erro")?"rgba(248,113,113,.1)":"rgba(74,222,128,.1)",border:`1px solid ${saveMsg.startsWith("Erro")?"rgba(248,113,113,.3)":"rgba(74,222,128,.3)"}`,borderRadius:12,padding:"10px 14px",fontSize:12,color:saveMsg.startsWith("Erro")?"#f87171":"#4ade80",marginBottom:16}}>
+              {saveMsg}
+            </div>
+          )}
+
+          {/* Campos editáveis */}
+          <div style={{display:"flex",flexDirection:"column",gap:14}}>
+
+            {/* Tema */}
+            <div style={{background:"rgba(255,255,255,.04)",border:"1px solid rgba(255,255,255,.08)",borderRadius:16,padding:16}}>
+              <span style={{fontSize:9.5,fontWeight:800,letterSpacing:".22em",textTransform:"uppercase",color:"rgba(255,255,255,.36)",display:"block",marginBottom:10}}>Tema</span>
+              <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:6}}>
+                {Object.values(THEMES).map(t=>(
+                  <div key={t.id} onClick={()=>setEditConfig(p=>({...p,themeId:t.id}))}
+                    style={{borderRadius:12,overflow:"hidden",cursor:"pointer",border:`2px solid ${editConfig.themeId===t.id?"rgba(255,255,255,.65)":"rgba(255,255,255,.07)"}`,transition:"border-color .15s"}}>
+                    <div style={{height:40,background:t.prev,display:"flex",alignItems:"center",justifyContent:"center",fontSize:18}}>{t.icon}</div>
+                    <div style={{padding:"5px 8px",background:"rgba(255,255,255,.04)",fontSize:10,fontWeight:800}}>{t.label}</div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Destinatários */}
+            <div style={{background:"rgba(255,255,255,.04)",border:"1px solid rgba(255,255,255,.08)",borderRadius:16,padding:16,display:"flex",flexDirection:"column",gap:10}}>
+              <span style={{fontSize:9.5,fontWeight:800,letterSpacing:".22em",textTransform:"uppercase",color:"rgba(255,255,255,.36)"}}>Destinatário & remetente</span>
+              <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8}}>
+                <input className="inp" placeholder="Para (nome)" value={editConfig.receiver||""}
+                  onChange={e=>setEditConfig(p=>({...p,receiver:e.target.value}))}/>
+                <input className="inp" placeholder="De (nome)" value={editConfig.sender||""}
+                  onChange={e=>setEditConfig(p=>({...p,sender:e.target.value}))}/>
+              </div>
+            </div>
+
+            {/* Tagline / Link */}
+            <div style={{background:"rgba(255,255,255,.04)",border:"1px solid rgba(255,255,255,.08)",borderRadius:16,padding:16,display:"flex",flexDirection:"column",gap:10}}>
+              <span style={{fontSize:9.5,fontWeight:800,letterSpacing:".22em",textTransform:"uppercase",color:"rgba(255,255,255,.36)"}}>Tagline & link</span>
+              <input className="inp" placeholder="Tagline personalizada" value={editConfig.customTagline||""}
+                onChange={e=>setEditConfig(p=>({...p,customTagline:e.target.value}))}/>
+              <div style={{display:"flex",background:"rgba(255,255,255,.05)",border:"1px solid rgba(255,255,255,.09)",borderRadius:11,overflow:"hidden"}}>
+                <span style={{padding:"10px 11px",fontSize:11,color:"rgba(255,255,255,.3)",borderRight:"1px solid rgba(255,255,255,.07)",display:"flex",alignItems:"center",whiteSpace:"nowrap"}}>?c=</span>
+                <input className="inp" style={{borderRadius:0,border:"none",background:"transparent",flex:1}} placeholder="seu-link"
+                  value={editConfig.slug||""}
+                  onChange={e=>setEditConfig(p=>({...p,slug:safeSlug(e.target.value)}))}/>
+              </div>
+            </div>
+
+            {/* Declaração */}
+            <div style={{background:"rgba(255,255,255,.04)",border:"1px solid rgba(255,255,255,.08)",borderRadius:16,padding:16,display:"flex",flexDirection:"column",gap:10}}>
+              <span style={{fontSize:9.5,fontWeight:800,letterSpacing:".22em",textTransform:"uppercase",color:"rgba(255,255,255,.36)"}}>Declaração & mensagem secreta</span>
+              <textarea className="inp" placeholder="Sua mensagem…" value={editConfig.message||""}
+                onChange={e=>setEditConfig(p=>({...p,message:e.target.value}))} style={{height:90}}/>
+              <textarea className="inp" placeholder="Mensagem da raspadinha…" value={editConfig.secretMessage||""}
+                onChange={e=>setEditConfig(p=>({...p,secretMessage:e.target.value}))} style={{height:70}}/>
+            </div>
+
+            {/* Música */}
+            <div style={{background:"rgba(255,255,255,.04)",border:"1px solid rgba(255,255,255,.08)",borderRadius:16,padding:16,display:"flex",flexDirection:"column",gap:10}}>
+              <span style={{fontSize:9.5,fontWeight:800,letterSpacing:".22em",textTransform:"uppercase",color:"rgba(255,255,255,.36)"}}>Música (Spotify ou YouTube)</span>
+              <input className="inp" placeholder="Cole o link aqui…" value={editConfig.musicUrl||""}
+                onChange={e=>setEditConfig(p=>({...p,musicUrl:e.target.value}))}/>
+            </div>
+
+            {/* Data */}
+            {editConfig.widgets?.counter&&(
+              <div style={{background:"rgba(255,255,255,.04)",border:"1px solid rgba(255,255,255,.08)",borderRadius:16,padding:16,display:"flex",flexDirection:"column",gap:10}}>
+                <span style={{fontSize:9.5,fontWeight:800,letterSpacing:".22em",textTransform:"uppercase",color:"rgba(255,255,255,.36)"}}>Data de início do relacionamento</span>
+                <input type="date" className="inp" value={editConfig.startDate||""}
+                  onChange={e=>setEditConfig(p=>({...p,startDate:e.target.value}))}/>
+              </div>
+            )}
+
+            {/* Fotos */}
+            <div style={{background:"rgba(255,255,255,.04)",border:"1px solid rgba(255,255,255,.08)",borderRadius:16,padding:16,display:"flex",flexDirection:"column",gap:10}}>
+              <span style={{fontSize:9.5,fontWeight:800,letterSpacing:".22em",textTransform:"uppercase",color:"rgba(255,255,255,.36)"}}>Fotos ({(editConfig.photos||[]).length}/9)</span>
+              <input id="edit-fi" type="file" multiple accept="image/*" style={{display:"none"}}
+                onChange={async e=>{
+                  const files=Array.from(e.target.files||[]).filter(f=>f.type?.startsWith("image/"));
+                  const room=9-(editConfig.photos?.length||0);
+                  const picked=files.slice(0,Math.max(0,room));
+                  const newPhotos=[];
+                  for(const file of picked){
+                    const r=new FileReader();
+                    const b64=await new Promise(res=>{ r.onload=()=>res(r.result.split(",")[1]||""); r.readAsDataURL(file); });
+                    newPhotos.push({id:`p_${Date.now()}_${Math.random().toString(36).slice(2,5)}`,url:URL.createObjectURL(file),date:"",_local:true,name:file.name,type:file.type,base64:b64});
+                  }
+                  setEditConfig(p=>({...p,photos:[...(p.photos||[]),...newPhotos].slice(0,9)}));
+                }}/>
+              <label htmlFor="edit-fi" style={{display:"flex",alignItems:"center",justifyContent:"center",height:64,border:"2px dashed rgba(255,255,255,.1)",borderRadius:12,cursor:"pointer",fontSize:12,color:"rgba(255,255,255,.4)",gap:8}}>
+                <span>📸</span> Adicionar fotos
+              </label>
+              {(editConfig.photos||[]).length>0&&(
+                <div style={{display:"flex",gap:8,flexWrap:"wrap"}}>
+                  {(editConfig.photos||[]).map((p,i)=>(
+                    <div key={p.id||i} style={{position:"relative"}}>
+                      <div style={{width:72,height:60,borderRadius:10,overflow:"hidden",border:"1px solid rgba(255,255,255,.1)"}}>
+                        <img src={p.url} style={{width:"100%",height:"100%",objectFit:"cover"}}/>
+                      </div>
+                      <button onClick={()=>setEditConfig(prev=>({...prev,photos:prev.photos.filter((_,j)=>j!==i)}))}
+                        style={{position:"absolute",top:-6,right:-6,width:18,height:18,borderRadius:"50%",background:"#ef4444",border:"none",color:"#fff",cursor:"pointer",fontSize:10,fontWeight:900,display:"flex",alignItems:"center",justifyContent:"center"}}>×</button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            <button onClick={()=>saveEdit()} disabled={!!saving}
+              style={{padding:"14px",background:ac,border:"none",borderRadius:14,color:"#fff",fontWeight:900,fontSize:14,cursor:"pointer",opacity:saving?.6:1,boxShadow:`0 6px 24px ${ac}44`}}>
+              {saving?"Salvando…":"💾 Salvar alterações"}
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // ── Lista de cartões ──
+  return(
+    <div style={{position:"fixed",inset:0,zIndex:8000,background:"rgba(0,0,0,.82)",backdropFilter:"blur(14px)",display:"flex",flexDirection:"column",overflowY:"auto"}}>
+      <div style={{maxWidth:680,width:"100%",margin:"0 auto",padding:"28px 20px 60px"}}>
+        <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:28}}>
+          <div>
+            <div style={{fontFamily:"Fraunces,serif",fontSize:26,fontWeight:900}}>Meus Cartões</div>
+            <div style={{fontSize:12,color:"rgba(255,255,255,.4)",marginTop:2}}>{user.email}</div>
+          </div>
+          <button onClick={onClose} style={{background:"rgba(255,255,255,.08)",border:"1px solid rgba(255,255,255,.12)",borderRadius:12,padding:"8px 16px",color:"#fff",fontWeight:800,fontSize:12,cursor:"pointer"}}>← Fechar</button>
+        </div>
+
+        {loading&&<div style={{textAlign:"center",padding:40,color:"rgba(255,255,255,.4)"}}>Carregando…</div>}
+
+        {!loading&&cards.length===0&&(
+          <div style={{textAlign:"center",padding:48,background:"rgba(255,255,255,.03)",border:"1px dashed rgba(255,255,255,.1)",borderRadius:20}}>
+            <div style={{fontSize:40,marginBottom:12}}>💌</div>
+            <div style={{fontFamily:"Fraunces,serif",fontSize:18,fontWeight:700,marginBottom:6}}>Nenhum cartão ainda</div>
+            <div style={{fontSize:13,color:"rgba(255,255,255,.4)",marginBottom:20}}>Crie seu primeiro cartão digital!</div>
+            <button onClick={onClose} style={{background:accent,border:"none",borderRadius:12,padding:"11px 24px",color:"#fff",fontWeight:900,fontSize:13,cursor:"pointer"}}>Criar cartão</button>
+          </div>
+        )}
+
+        <div style={{display:"flex",flexDirection:"column",gap:14}}>
+          {cards.map(card=>{
+            const cfg=card.config||{};
+            const t=th(cfg);
+            const ac=cfg.customAccent||t.accent;
+            const editCount=card.edit_count||0;
+            const freeLeft=Math.max(0,FREE_EDITS-editCount);
+            const paidDate=card.paid_at?new Date(card.paid_at).toLocaleDateString("pt-BR"):"—";
+            return(
+              <div key={card.id} style={{background:"rgba(255,255,255,.04)",border:"1px solid rgba(255,255,255,.08)",borderRadius:20,overflow:"hidden"}}>
+                <div style={{height:4,background:`linear-gradient(90deg,${ac},transparent)`}}/>
+                <div style={{padding:"16px 18px"}}>
+                  <div style={{display:"flex",alignItems:"flex-start",justifyContent:"space-between",gap:12,marginBottom:10}}>
+                    <div style={{minWidth:0,flex:1}}>
+                      <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:4}}>
+                        <span style={{fontSize:18}}>{t.icon}</span>
+                        <span style={{fontFamily:"Fraunces,serif",fontSize:16,fontWeight:900,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>
+                          {cfg.receiver?`Para ${cfg.receiver}`:`Cartão — ${card.slug}`}
+                        </span>
+                        <span style={{flexShrink:0,fontSize:9,fontWeight:900,letterSpacing:".12em",textTransform:"uppercase",padding:"2px 8px",borderRadius:99,background:card.published?"rgba(74,222,128,.15)":"rgba(255,255,255,.07)",color:card.published?"#4ade80":"rgba(255,255,255,.4)",border:card.published?"1px solid rgba(74,222,128,.3)":"1px solid rgba(255,255,255,.1)"}}>
+                          {card.published?"Publicado":"Rascunho"}
+                        </span>
+                      </div>
+                      <div style={{fontSize:11,color:"rgba(255,255,255,.35)",fontFamily:"Space Mono,monospace",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",marginBottom:4}}>/{card.slug}</div>
+                      <div style={{fontSize:11,color:"rgba(255,255,255,.3)"}}>
+                        {t.label} · Pago em {paidDate}
+                      </div>
+                    </div>
+                  </div>
+                  {/* Barra de edições */}
+                  <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:12,padding:"7px 10px",background:"rgba(255,255,255,.03)",borderRadius:10,border:"1px solid rgba(255,255,255,.06)"}}>
+                    <div style={{display:"flex",gap:4}}>
+                      {[0,1,2].map(i=>(
+                        <div key={i} style={{width:8,height:8,borderRadius:"50%",background:i<editCount?"rgba(248,113,113,.7)":i<FREE_EDITS?"rgba(74,222,128,.5)":"rgba(255,255,255,.1)",border:"1px solid rgba(255,255,255,.1)",transition:"background .2s"}}/>
+                      ))}
+                    </div>
+                    <span style={{fontSize:10,color:"rgba(255,255,255,.4)"}}>
+                      {freeLeft>0?`${freeLeft} edição(ões) grátis restante(s)`:"Próxima edição: R$7,99"}
+                    </span>
+                  </div>
+
+                  <div style={{display:"flex",gap:8,flexWrap:"wrap"}}>
+                    {card.published&&(
+                      <a href={shareUrlFromSlug(card.slug)} target="_blank"
+                        style={{flex:"1 1 auto",minWidth:80,textAlign:"center",padding:"8px 12px",borderRadius:10,background:`${ac}22`,border:`1px solid ${ac}44`,color:ac,fontWeight:800,fontSize:11,textDecoration:"none"}}>
+                        🔗 Ver
+                      </a>
+                    )}
+                    <button
+                      onClick={()=>{ setEditingCard(card); setEditConfig(normalize(cfg)); setSaveMsg(""); }}
+                      style={{flex:"1 1 auto",minWidth:80,padding:"8px 12px",borderRadius:10,background:"rgba(255,255,255,.07)",border:"1px solid rgba(255,255,255,.12)",color:"#fff",fontWeight:800,fontSize:11,cursor:"pointer"}}>
+                      ✏️ Editar
+                    </button>
+                    <button
+                      onClick={()=>deleteCard(card.id,card.slug)}
+                      disabled={deleting===card.id}
+                      style={{flex:"0 0 auto",padding:"8px 12px",borderRadius:10,background:"rgba(239,68,68,.1)",border:"1px solid rgba(239,68,68,.25)",color:"#f87171",fontWeight:800,fontSize:11,cursor:"pointer",opacity:deleting===card.id?.5:1}}>
+                      {deleting===card.id?"…":"🗑️"}
+                    </button>
+                    {card.published&&(
+                      <button onClick={()=>navigator.clipboard?.writeText(shareUrlFromSlug(card.slug))}
+                        style={{flex:"0 0 auto",padding:"8px 12px",borderRadius:10,background:"rgba(255,255,255,.06)",border:"1px solid rgba(255,255,255,.1)",color:"rgba(255,255,255,.6)",fontWeight:800,fontSize:11,cursor:"pointer"}}>
+                        📋
+                      </button>
+                    )}
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    </div>
+  );
+};
+
+/* hook de sessão */
+function useAuth(){
+  const [user,setUser]=useState(null);
+  const [loading,setLoading]=useState(true);
+  useEffect(()=>{
+    if(!sb){ setLoading(false); return; }
+    sb.auth.getSession().then(({data})=>{ setUser(data.session?.user||null); setLoading(false); });
+    const {data:{subscription}}=sb.auth.onAuthStateChange((_,session)=>{ setUser(session?.user||null); });
+    return()=>subscription.unsubscribe();
+  },[]);
+  return {user,loading};
+}
+
+
+/* ── EditSuccessPage: volta do Stripe de edição, finaliza o save ── */
+const EditSuccessPage=({slug})=>{
+  const [status,setStatus]=useState("Confirmando pagamento…");
+  const [done,setDone]=useState(false);
+  const [err,setErr]=useState("");
+
+  useEffect(()=>{
+    let mounted=true;
+    async function run(){
+      try{
+        const params=new URLSearchParams(window.location.search);
+        const session_id=params.get("session_id");
+        if(!session_id) throw new Error("session_id ausente.");
+
+        // Recupera config salva antes do redirect
+        const saved=JSON.parse(localStorage.getItem("lb_edit_v1")||"{}");
+        if(!saved.slug) throw new Error("Dados da edição não encontrados. Tente editar novamente.");
+
+        setStatus("Salvando alterações…");
+
+        let authHeader=`Bearer ${SUPABASE_ANON_KEY}`;
+        if(sb){
+          const {data:sd}=await sb.auth.getSession();
+          if(sd?.session?.access_token) authHeader=`Bearer ${sd.session.access_token}`;
+        }
+
+        const photos=(saved.photos||[]).slice(0,9).map(p=>({
+          id:p.id, url:p.url, date:p.date||null,
+          base64:p.base64||"", name:p.name||"photo.jpg",
+          contentType:p.type||"image/jpeg", photo_date:p.date||null,
+        }));
+
+        const res=await fetch(`${FUNCTIONS_BASE}/save-card`,{
+          method:"POST",
+          headers:{"content-type":"application/json","apikey":SUPABASE_ANON_KEY,"authorization":authHeader},
+          body:JSON.stringify({slug:saved.slug,config:saved.config,photos,session_id}),
+        });
+        const data=await res.json().catch(()=>({}));
+        if(!res.ok) throw new Error(data?.error||"Falha ao salvar.");
+
+        localStorage.removeItem("lb_edit_v1");
+        if(!mounted) return;
+        setDone(true);
+        setStatus("Alterações salvas com sucesso! ✅");
+        try{confetti({particleCount:80,spread:60,origin:{y:.6}});}catch(e){}
+      }catch(e){
+        if(!mounted) return;
+        setErr(e.message);
+        setStatus("Erro ao salvar");
+      }
+    }
+    run();
+    return()=>{ mounted=false; };
+  },[]);
+
+  return(
+    <div style={{minHeight:"100vh",display:"flex",alignItems:"center",justifyContent:"center",padding:24}}>
+      <div style={{maxWidth:420,width:"100%",background:"rgba(255,255,255,.04)",border:"1px solid rgba(255,255,255,.09)",borderRadius:18,padding:24}}>
+        <div style={{fontFamily:"Fraunces,serif",fontWeight:900,fontSize:22,marginBottom:6}}>{done?"🎉 Salvo!":"⏳ Aguarde…"}</div>
+        <div style={{color:err?"#f87171":"rgba(255,255,255,.65)",fontSize:13,marginBottom:14}}>{status}</div>
+        {err&&<div style={{background:"rgba(248,113,113,.1)",border:"1px solid rgba(248,113,113,.3)",borderRadius:12,padding:"10px 12px",fontSize:11,color:"#fca5a5",marginBottom:14}}>{err}</div>}
+        <div style={{display:"flex",gap:10}}>
+          <a href={shareUrlFromSlug(slug)} style={{flex:1,textAlign:"center",padding:"12px",borderRadius:12,background:done?"#fff":"rgba(255,255,255,.09)",color:done?"#07070f":"rgba(255,255,255,.4)",fontWeight:900,textDecoration:"none",pointerEvents:done?"auto":"none"}}>Ver cartão</a>
+          <a href={APP_URL} style={{flex:1,textAlign:"center",padding:"12px",borderRadius:12,background:"rgba(255,255,255,.06)",border:"1px solid rgba(255,255,255,.09)",color:"#fff",fontWeight:900,textDecoration:"none"}}>Início</a>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+const EditCancelPage=({slug})=>(
+  <div style={{minHeight:"100vh",display:"flex",alignItems:"center",justifyContent:"center",padding:24}}>
+    <div style={{maxWidth:420,width:"100%",background:"rgba(255,255,255,.04)",border:"1px solid rgba(255,255,255,.09)",borderRadius:18,padding:24}}>
+      <div style={{fontFamily:"Fraunces,serif",fontWeight:900,fontSize:22,marginBottom:6}}>Pagamento cancelado</div>
+      <div style={{color:"rgba(255,255,255,.65)",fontSize:13,marginBottom:14}}>Nenhuma cobrança foi feita. Suas alterações não foram salvas.</div>
+      <a href={APP_URL} style={{display:"block",textAlign:"center",padding:"12px",borderRadius:12,background:"#fff",color:"#07070f",fontWeight:900,textDecoration:"none"}}>Voltar ao início</a>
+    </div>
+  </div>
+);
+
+
+/* ════════════════════════════════════════════════════
+   EXTERNAL TEMPLATE PAGE — página pública fullscreen
+   para templates externos (ex: Netflix)
+════════════════════════════════════════════════════ */
+const ExternalTemplatePage=({cfg, tpl})=>{
+  const iframeRef = useRef(null);
+  const [loaded, setLoaded]   = useState(false);
+  const [error, setError]     = useState(false);
+
+  useEffect(()=>{
+    if(!loaded || !iframeRef.current) return;
+    try{
+      iframeRef.current.contentWindow.postMessage(
+        { type:"LB_CONFIG", config: cfg },
+        window.location.origin
+      );
+    }catch(e){}
+  },[loaded, cfg]);
+
+  if(error) return(
+    <div style={{minHeight:"100vh",display:"flex",alignItems:"center",justifyContent:"center",padding:24,flexDirection:"column",gap:16,background:"#0d0d0d"}}>
+      <div style={{fontSize:40}}>⚠️</div>
+      <div style={{fontFamily:"Fraunces,serif",fontSize:22,fontWeight:900,color:"#fff"}}>Template indisponível</div>
+      <div style={{fontSize:13,color:"rgba(255,255,255,.4)"}}>O arquivo {tpl.file} não foi encontrado.</div>
+    </div>
+  );
+
+  return(
+    <div style={{position:"relative",width:"100%",minHeight:"100vh"}}>
+      {!loaded&&(
+        <div style={{position:"fixed",inset:0,background:"#0d0d0d",display:"flex",alignItems:"center",justifyContent:"center",flexDirection:"column",gap:14,zIndex:10}}>
+          <div style={{fontSize:36}}>{tpl.icon}</div>
+          <div style={{fontSize:13,color:"rgba(255,255,255,.5)"}}>Carregando {tpl.label}…</div>
+        </div>
+      )}
+      <iframe
+        ref={iframeRef}
+        src={tpl.file}
+        onLoad={()=>setLoaded(true)}
+        onError={()=>setError(true)}
+        style={{position:"fixed",inset:0,width:"100%",height:"100%",border:"none",display:"block"}}
+        title={tpl.label}
+        sandbox="allow-scripts allow-same-origin allow-forms"
+        allow="autoplay"
+      />
+    </div>
+  );
+};
+
+ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
+</script>
+</body>
+</html>
